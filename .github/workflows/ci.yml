@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --frozen
+      - run: make check-py
+      - name: Protected tests are never skipped or reduced
+        run: |
+          ! grep -nE "pytest.mark.skip|@skip|xfail" core/tests/*.py
+          count=$(uv run pytest core --collect-only -q | awk -F': ' '{s+=$2} END {print s}')
+          echo "rules-engine tests: $count"
+          test "$count" -ge "$(cat core/tests/MIN_TEST_COUNT)"
+
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck && pnpm lint && pnpm test && pnpm dead
+      - run: pnpm build
+
+  duplication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: npx --yes jscpd@4 --threshold 3 --ignore "**/node_modules/**,**/dist/**,**/*.lock,**/pnpm-lock.yaml" core api web/src

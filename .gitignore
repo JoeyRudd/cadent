@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.coverage
+.hypothesis/
+node_modules/
+web/dist/
+.env
+.claude/settings.local.json
+.import_linter_cache/

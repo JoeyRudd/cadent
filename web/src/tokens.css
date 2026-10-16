@@ -1,0 +1,55 @@
+/*
+ * Cadent design tokens: direction D, "Sage & Teal". The single source of every colour,
+ * radius and font in the app (see DESIGN.md). Components use the Tailwind names below.
+ */
+@import "tailwindcss";
+@import "@fontsource-variable/figtree";
+
+@theme {
+  --font-sans: "Figtree Variable", system-ui, sans-serif;
+
+  --color-bg: #f4f5ef;
+  --color-surface: #ffffff;
+  --color-line: #dfe3d5;
+  --color-ink: #20271f;
+  --color-muted: #5d665b;
+  --color-accent: #277a70;
+  --color-on-accent: #ffffff;
+  --color-accent-soft: #e1efea;
+  --color-accent-ink: #1f6259;
+  --color-on-plan: #2f6a3b;
+  --color-on-plan-soft: #e1eddd;
+  --color-off-plan: #7e5a10;
+  --color-off-plan-soft: #faeed3;
+  --color-warning: #a3412d;
+
+  --radius-card: 20px;
+  --radius-button: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #141a17;
+    --color-surface: #1c2420;
+    --color-line: #2c3631;
+    --color-ink: #ecf0ec;
+    --color-muted: #a0aaa3;
+    --color-accent: #5fb3a7;
+    --color-on-accent: #0f2420;
+    --color-accent-soft: #1e3430;
+    --color-accent-ink: #9fd3ca;
+    --color-on-plan: #8fd4a8;
+    --color-on-plan-soft: #1a3324;
+    --color-off-plan: #f0c47a;
+    --color-off-plan-soft: #36291a;
+    --color-warning: #e8836c;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
