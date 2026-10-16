@@ -54,7 +54,7 @@ extraPaths = ["core/src", "api/src"]
 include = ["core/src", "core/tests", "api/src", "api/tests"]
 
 [tool.pytest.ini_options]
-testpaths = ["core/tests", "api/tests"]
+testpaths = ["core/tests", "api/tests", ".claude/hooks"]
 addopts = "-q --strict-markers"
 
 [tool.coverage.run]

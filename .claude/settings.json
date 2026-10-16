@@ -12,24 +12,59 @@
       "Bash(git diff:*)",
       "Bash(git log:*)"
     ],
-    "ask": ["Bash(git push:*)", "Bash(docker:*)", "Bash(pnpm add:*)", "Bash(uv add:*)"]
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(docker:*)",
+      "Bash(make up:*)",
+      "Bash(pnpm add:*)",
+      "Bash(uv add:*)",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(git clone:*)",
+      "Bash(gh:*)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(ssh:*)",
+      "Bash(scp:*)",
+      "Bash(npx:*)",
+      "Bash(pnpm dlx:*)",
+      "Bash(uvx:*)",
+      "Bash(pip install:*)",
+      "WebFetch",
+      "WebSearch"
+    ]
   },
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "Edit|Write",
-        "hooks": [{ "type": "command", "command": "uv run ruff format --quiet . && uv run ruff check --fix --quiet . || true" }]
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$(git rev-parse --show-toplevel)\" && uv run ruff format --quiet . && uv run ruff check --fix --quiet . || true"
+          }
+        ]
       }
     ],
     "PreToolUse": [
       {
-        "matcher": "Edit|Write",
-        "hooks": [{ "type": "command", "command": "python3 .claude/hooks/protect_files.py" }]
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/.claude/hooks/protect_files.py\""
+          }
+        ]
       }
     ],
     "Stop": [
       {
-        "hooks": [{ "type": "command", "command": "make check >/dev/null 2>&1 || { echo 'make check is failing: fix it before finishing.' >&2; exit 2; }" }]
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$(git rev-parse --show-toplevel)\" && make check >/dev/null 2>&1 || { echo 'make check is failing: fix it before finishing.' >&2; exit 2; }"
+          }
+        ]
       }
     ]
   }
