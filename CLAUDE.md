@@ -3,6 +3,12 @@
 Self-hosted running coach: Garmin sync, a deterministic plan-safety engine, a mobile PWA, and an
 MCP server so users analyse their data with their own AI. No LLM calls at runtime.
 
+**Start here:** `docs/roadmap.md` has the December plan, current status and the next task.
+
+## Setup
+
+`uv sync` and `cd web && pnpm install`. Then `make check` should pass.
+
 ## Commands
 
 - `make check`: every gate (format, lint, strict types, import contracts, dead code, tests). Must pass before you stop.
