@@ -4,6 +4,7 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 COPY core core
 COPY api api
+COPY db db
 RUN uv sync --frozen --no-dev --package cadent-api
 ENV PATH="/app/.venv/bin:$PATH"
 EXPOSE 8000

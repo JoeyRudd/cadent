@@ -6,16 +6,18 @@ requires-python = ">=3.12"
 license = "MIT"
 
 [tool.uv.workspace]
-members = ["core", "api"]
+members = ["core", "api", "db"]
 
 [tool.uv.sources]
 cadent-core = { workspace = true }
 cadent-api = { workspace = true }
+cadent-db = { workspace = true }
 
 [dependency-groups]
 dev = [
     "cadent-core",
     "cadent-api",
+    "cadent-db",
     "ruff>=0.7",
     "pyright>=1.1.390",
     "pytest>=8.3",
@@ -25,6 +27,7 @@ dev = [
     "import-linter>=2.1",
     "vulture>=2.13",
     "pre-commit>=4.0",
+    "testcontainers[postgres]>=4.8",
 ]
 
 [tool.ruff]
@@ -35,8 +38,12 @@ target-version = "py312"
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "C90", "N", "PL"]
 ignore = ["PLR2004"]
 
+[tool.ruff.lint.per-file-ignores]
+# Generated migrations are one long list of operations.
+"db/migrations/versions/*" = ["PLR0915"]
+
 [tool.ruff.lint.isort]
-known-first-party = ["cadent_core", "cadent_api"]
+known-first-party = ["cadent_core", "cadent_api", "cadent_db"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 8
@@ -50,11 +57,11 @@ typeCheckingMode = "strict"
 pythonVersion = "3.12"
 venvPath = "."
 venv = ".venv"
-extraPaths = ["core/src", "api/src"]
-include = ["core/src", "core/tests", "api/src", "api/tests"]
+extraPaths = ["core/src", "api/src", "db/src"]
+include = ["core/src", "core/tests", "api/src", "api/tests", "db/src", "db/tests", "db/migrations"]
 
 [tool.pytest.ini_options]
-testpaths = ["core/tests", "api/tests", ".claude/hooks"]
+testpaths = ["core/tests", "api/tests", "db/tests", ".claude/hooks"]
 addopts = "-q --strict-markers"
 
 [tool.coverage.run]
@@ -66,15 +73,24 @@ fail_under = 90
 show_missing = true
 
 [tool.importlinter]
-root_packages = ["cadent_core", "cadent_api"]
+root_packages = ["cadent_core", "cadent_api", "cadent_db"]
 include_external_packages = true
 
 [[tool.importlinter.contracts]]
 name = "Core is pure: it never imports the API or any I/O layer"
 type = "forbidden"
 source_modules = ["cadent_core"]
-forbidden_modules = ["cadent_api", "fastapi", "sqlalchemy", "httpx", "garminconnect"]
+forbidden_modules = [
+    "cadent_api",
+    "cadent_db",
+    "fastapi",
+    "sqlalchemy",
+    "alembic",
+    "psycopg",
+    "httpx",
+    "garminconnect",
+]
 
 [tool.vulture]
-paths = ["core/src", "api/src"]
+paths = ["core/src", "api/src", "db/src"]
 min_confidence = 80
