@@ -1,6 +1,6 @@
 # ADR 011: Auto-merge low-risk PRs after CI and a clean Claude review
 
-Status: Proposed
+Status: Accepted (2026-10-20)
 
 ## Context
 

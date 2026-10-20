@@ -52,7 +52,8 @@ jobs:
       - uses: actions/checkout@v4
       - run: npx --yes jscpd@4 --threshold 3 --ignore "**/node_modules/**,**/dist/**,**/*.lock,**/pnpm-lock.yaml" core api web/src
 
-  # Advisory: runs only after every blocking gate passes, and is not a required check.
+  # Runs only after every blocking gate passes, and is not a required check. Its verdict gates
+  # auto-merge below.
   claude-review:
     if: github.event_name == 'pull_request' && !github.event.pull_request.draft
     needs: [python, web, duplication]
@@ -65,3 +66,42 @@ jobs:
       actions: read
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+  # ADR 011: merge a low-risk PR once the gates pass and the review is clean. Joey merges the rest.
+  # This is the only job with a write token.
+  auto-merge:
+    if: >-
+      needs.claude-review.outputs.verdict == 'clean'
+      && github.event.pull_request.head.repo.full_name == github.repository
+      && !contains(github.event.pull_request.labels.*.name, 'hold')
+    needs: claude-review
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # --no-renames lists both sides of a move, so a file moved out of a safety path still counts.
+      # A PR with any other file is left for Joey: the merge step skips, nothing fails.
+      - id: paths
+        name: Every changed file is on a low-risk path
+        run: |
+          git diff --name-only --no-renames "$BASE_SHA...$HEAD_SHA" | tee changed.txt
+          if grep -vE '^(web/|api/|docs/|specs/|README)' changed.txt > /dev/null \
+            || grep -qE '^(docs/decisions/|web/package\.json$|web/pnpm-lock\.yaml$)' changed.txt \
+            || grep -qE '^(core/src/cadent_core/rules/|core/tests/|\.github/|\.claude/)' changed.txt; then
+            echo "Not low-risk: Joey merges this PR."
+            echo "low_risk=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "low_risk=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.paths.outputs.low_risk == 'true'
+        run: gh pr merge "${{ github.event.pull_request.number }}" --auto --squash --match-head-commit "$HEAD_SHA"
+        env:
+          GH_TOKEN: ${{ github.token }}
