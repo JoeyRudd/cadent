@@ -1,0 +1,55 @@
+name: Claude review
+
+# Advisory review, called from ci.yml once every blocking gate has passed. It only comments:
+# the job token is read-only, so it cannot approve, push or merge. Joey merges.
+on:
+  workflow_call:
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN:
+        required: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+      id-token: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # The repo's Stop hook runs `make check`, so Claude needs the same toolchain as CI.
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --frozen
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: web/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: web/.nvmrc
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: web
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            You are the advisory reviewer for pull request #${{ github.event.pull_request.number }}.
+            Get the change with `git diff origin/${{ github.base_ref }}...HEAD`.
+
+            1. Use the code-reviewer subagent on that diff. If the PR description links a spec in specs/, give it that spec.
+            2. If the diff touches core/src/cadent_core/rules/, core/tests/, a plan generator or a plan importer,
+               also use the safety-auditor subagent.
+            3. Post each finding as an inline comment on the line it concerns, with
+               mcp__github_inline_comment__create_inline_comment and confirmed: true.
+               Findings only: no praise, no style notes. If neither agent finds anything, post nothing.
+
+            You are advisory. Do not approve, request changes, push or merge.
+          claude_args: >-
+            --max-turns 20
+            --allowedTools "Agent,Read,Grep,Glob,Bash(git diff:*),Bash(git log:*),mcp__github_inline_comment__create_inline_comment"
