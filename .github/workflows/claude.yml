@@ -1,0 +1,50 @@
+name: Claude
+
+# @claude in an issue or PR comment: Claude implements the request on a claude/ branch. The change
+# then goes through CI, the advisory review and Joey's merge like any other. Only users with write
+# access can trigger it (checked by the action).
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened]
+
+concurrency:
+  group: claude-${{ github.event.issue.number || github.event.pull_request.number }}
+
+jobs:
+  claude:
+    if: contains(github.event.comment.body || github.event.issue.body, '@claude')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      # The repo's hooks run ruff and `make check`, so Claude needs the same toolchain as CI.
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --frozen
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: web/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: web/.nvmrc
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: web
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Commits go through GitHub's API, so the repo's ask rule on `git push` stays in force.
+          use_commit_signing: true
+          claude_args: >-
+            --max-turns 40
+            --allowedTools "Agent,Read,Grep,Glob,Edit,MultiEdit,Write"
