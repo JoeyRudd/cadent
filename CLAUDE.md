@@ -7,12 +7,14 @@ MCP server so users analyse their data with their own AI. No LLM calls at runtim
 
 ## Setup
 
-`uv sync` and `cd web && pnpm install`. Then `make check` should pass.
+`uv sync` and `cd web && pnpm install`. Then `make check` should pass. Versions are pinned: Python in
+`.python-version`, Node in `web/.nvmrc`, pnpm in `web/package.json` (`corepack enable pnpm` picks it up).
 
 ## Commands
 
 - `make check`: every gate (format, lint, strict types, import contracts, dead code, tests). Must pass before you stop.
 - `make test-core`: rules-engine tests only (fast).
+- `make dev`: API with reload plus the web dev server.
 - `make fmt`: auto-format Python.
 - Web (in `web/`): `pnpm dev`, `pnpm typecheck`, `pnpm lint`, `pnpm test`.
 

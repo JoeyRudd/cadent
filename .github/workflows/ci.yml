@@ -20,7 +20,7 @@ jobs:
       - run: make check-py
       - name: Protected tests are never skipped or reduced
         run: |
-          ! grep -nE "pytest.mark.skip|@skip|xfail" core/tests/*.py
+          ! grep -nE "pytest.mark.skip|@skip|xfail|pytest.skip\(|importorskip" core/tests/*.py
           count=$(uv run pytest core --collect-only -q | awk -F': ' '{s+=$2} END {print s}')
           echo "rules-engine tests: $count"
           test "$count" -ge "$(cat core/tests/MIN_TEST_COUNT)"
@@ -35,10 +35,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:
-          version: 10
+          package_json_file: web/package.json
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: web/.nvmrc
           cache: pnpm
           cache-dependency-path: web/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
