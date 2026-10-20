@@ -10,8 +10,8 @@ doc in Joey's Claude artifacts. This file is the working summary for Claude Code
 
 | Week | Dates | Deliverable | Status |
 | --- | --- | --- | --- |
-| 1 | Oct 19-25 | Foundations + OAuth 2.1 / MCP spike | Scaffold done Oct 16. **Next: the spike** (`specs/oauth-mcp-spike.md`) |
-| 2 | Oct 26 - Nov 1 | Postgres schema + Alembic, Garmin sync worker, Toronto Half plan imported | Not started |
+| 1 | Oct 19-25 | Foundations + OAuth 2.1 / MCP spike | Done Oct 20: scaffold, spike merged (PR #6), library recorded in ADR 009 |
+| 2 | Oct 26 - Nov 1 | Postgres schema + Alembic, Garmin sync worker, Toronto Half plan imported | **Next: Postgres schema + Alembic** (`specs/postgres-schema.md`) |
 | 3 | Nov 2-8 | Remaining safety rules (test-first), plan import + audit | Not started |
 | 4 | Nov 9-15 | Run matching, Today screen | Not started |
 | 5 | Nov 16-22 | Run detail + check-in, deploy to VPS. **Daily use starts** | Not started |

@@ -7,6 +7,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
     volumes:
       - pgdata:/var/lib/postgresql/data
+    # Host-only, so alembic and psql run from the host. Never published beyond localhost.
+    ports:
+      - "127.0.0.1:5432:5432"
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "cadent"]
       interval: 10s
@@ -16,7 +19,7 @@ services:
       context: .
       dockerfile: api/Dockerfile
     environment:
-      DATABASE_URL: postgresql://cadent:${POSTGRES_PASSWORD}@db:5432/cadent
+      DATABASE_URL: postgresql+psycopg://cadent:${POSTGRES_PASSWORD}@db:5432/cadent
     depends_on:
       db:
         condition: service_healthy
