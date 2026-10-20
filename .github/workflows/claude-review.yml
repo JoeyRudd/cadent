@@ -1,9 +1,13 @@
 name: Claude review
 
-# Advisory review, called from ci.yml once every blocking gate has passed. It only comments:
-# the job token is read-only, so it cannot approve, push or merge. Joey merges.
+# Review called from ci.yml once every blocking gate has passed. The job token is read-only, so it
+# cannot approve, push or merge. Its verdict gates the auto-merge job for low-risk PRs (ADR 011).
 on:
   workflow_call:
+    outputs:
+      verdict:
+        description: "clean, findings or not-reviewed. Only clean lets a low-risk PR auto-merge."
+        value: ${{ jobs.review.outputs.verdict }}
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN:
         required: true
@@ -12,6 +16,8 @@ jobs:
   review:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      verdict: ${{ steps.verdict.outputs.verdict }}
     permissions:
       contents: read
       pull-requests: read
@@ -35,7 +41,11 @@ jobs:
           cache-dependency-path: web/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
         working-directory: web
-      - uses: anthropics/claude-code-action@v1
+      # A failed or skipped review (the action refuses PRs that change workflow files) must not
+      # fail the job: the verdict step records it as not-reviewed instead.
+      - id: review
+        uses: anthropics/claude-code-action@v1
+        continue-on-error: true
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
@@ -48,8 +58,27 @@ jobs:
             3. Post each finding as an inline comment on the line it concerns, with
                mcp__github_inline_comment__create_inline_comment and confirmed: true.
                Findings only: no praise, no style notes. If neither agent finds anything, post nothing.
+            4. Return `findings` as the number of inline comments you posted (0 if none).
 
             You are advisory. Do not approve, request changes, push or merge.
           claude_args: >-
             --max-turns 20
             --allowedTools "Agent,Read,Grep,Glob,Bash(git diff:*),Bash(git log:*),mcp__github_inline_comment__create_inline_comment"
+            --json-schema '{"type":"object","properties":{"findings":{"type":"integer","minimum":0}},"required":["findings"]}'
+      # Anything but a successful run with a findings count is not-reviewed, never clean.
+      - id: verdict
+        if: always()
+        env:
+          OUTCOME: ${{ steps.review.outcome }}
+          RESULT: ${{ steps.review.outputs.structured_output }}
+        run: |
+          findings=$(jq -r '.findings // empty' <<< "$RESULT" 2>/dev/null || true)
+          if [ "$OUTCOME" != success ] || ! [[ "$findings" =~ ^[0-9]+$ ]]; then
+            verdict=not-reviewed
+          elif [ "$findings" -eq 0 ]; then
+            verdict=clean
+          else
+            verdict=findings
+          fi
+          echo "Review verdict: $verdict"
+          echo "verdict=$verdict" >> "$GITHUB_OUTPUT"
