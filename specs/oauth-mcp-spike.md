@@ -29,10 +29,10 @@ Real user accounts, the database, refresh-token storage beyond memory, styling, 
 
 ## Acceptance
 
-- [ ] Adding the tunnel URL + `/mcp` as a custom connector in claude.ai triggers the login page
-- [ ] After login, Claude calls `ping` and gets back the test user's id
-- [ ] A request with no token or an expired token gets 401
-- [ ] ADR 009 updated: library chosen, why, what it costs, and anything the spike could not prove
+- [x] Adding the tunnel URL + `/mcp` as a custom connector in claude.ai triggers the login page
+- [x] After login, Claude calls `ping` and gets back the test user's id
+- [x] A request with no token or an expired token gets 401
+- [x] ADR 009 updated: library chosen, why, what it costs, and anything the spike could not prove
 
 ## End-to-end check
 
