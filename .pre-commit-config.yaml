@@ -13,6 +13,6 @@ repos:
         types: [python]
       - id: protected-tests
         name: no skipped tests in protected suites
-        entry: bash -c '! grep -nE "pytest.mark.skip|@skip|xfail" core/tests/*.py'
+        entry: bash -c '! grep -nE "pytest.mark.skip|@skip|xfail|pytest.skip\(|importorskip" core/tests/*.py'
         language: system
         pass_filenames: false
