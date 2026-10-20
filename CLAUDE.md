@@ -36,5 +36,7 @@ MCP server so users analyse their data with their own AI. No LLM calls at runtim
 - Do not edit, reformat or "improve" code outside the task. Mention unrelated dead code instead of deleting it.
 - New code must look like the code around it and use the names in `docs/glossary.md`.
 - A new structural choice needs an ADR in `docs/decisions/`, approved by Joey. Propose it; never assume it.
+- Merging (ADR 011): CI auto-merges a PR that only touches low-risk paths once the Claude review is clean.
+  Joey merges rules, protected tests, workflows and `.claude/` changes. Never run `gh pr merge` yourself.
 - Units: metres and seconds everywhere; format only at the edge.
 - UI: every colour, radius and font comes from a token. No raw hex values or arbitrary Tailwind values (lint enforces it).

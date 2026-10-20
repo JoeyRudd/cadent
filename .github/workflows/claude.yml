@@ -1,7 +1,7 @@
 name: Claude
 
 # @claude in an issue or PR comment: Claude implements the request on a claude/ branch. The change
-# then goes through CI, the advisory review and Joey's merge like any other. Only users with write
+# then goes through CI, the review and the ADR 011 merge gate like any other. Only users with write
 # access can trigger it (checked by the action).
 on:
   issue_comment:
