@@ -14,4 +14,5 @@ One name per concept, used in code, UI and docs.
 | Check-in | The post-run form: effort, soreness, pain | log, survey |
 | Readiness | The good / fair / low morning signal from HRV, sleep and resting HR | recovery score |
 | Long run | The week's longest run (`RunType.LONG`) | LSD |
+| Quality session | A hard run: `tempo`, `intervals` or `race`. A group of run types, not a `RunType` | workout, key run |
 | Shakeout | A short race-week run, exempt from the 5 km minimum | |
