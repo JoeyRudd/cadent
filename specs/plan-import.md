@@ -60,7 +60,7 @@ separately with `/add-safety-rule`; import picks them up through `RULES` with no
 
 **Fixture:** `core/tests/fixtures/golden/toronto-half.json`, made with `/plan-fixture` from the
 "Toronto Half Marathon Plan" doc (weeks 16-43, run types per Decisions below). Golden fixtures are
-protected: Joey adds it by hand.
+protected: Claude drafts `core/tests/fixtures/toronto-half.draft.json` and Joey copies it in by hand.
 
 **Docs:** `docs/glossary.md` gains a "Quality session" row (see Decisions).
 
@@ -77,7 +77,9 @@ protected: Joey adds it by hand.
 
 ## Acceptance
 
-- [ ] The Toronto Half golden fixture parses, converts to `Run`s and validates with zero Errors.
+- [ ] The Toronto Half golden fixture parses, converts to `Run`s and validates with zero Errors, with
+      Week 15 as planned as History (7 km easy on 2026-10-13, 14 km long on 2026-10-17). Until the
+      golden copy exists, the test reads the draft.
 - [ ] A file with `schema` other than `cadent.plan/v1`, an unknown field, a negative distance, a
       `type` outside `RunType`, or a run with no `distance_m` is rejected with 422 and nothing is saved.
 - [ ] Lift sessions are accepted, not saved, and counted in `skipped_lifts`.
@@ -95,8 +97,9 @@ protected: Joey adds it by hand.
 
 1. `make up`, then `docker compose exec api python -m cadent_api.create_owner --email ... --timezone America/Toronto`.
 2. Open the app at phone width: the Import screen shows because there is no active plan.
-3. Upload `toronto-half.json`. The audit lists the Findings by week (expect a `LONG_RUN_SPIKE`
-   warning on the first long run, since there is no History before Garmin sync).
+3. Upload `toronto-half.json`. The audit lists the Findings by week (expect one `LONG_RUN_SPIKE`
+   Error on the first long run, Oct 24: with no History before Garmin sync, the 15 km long run is
+   compared with that week's 8 km maximum).
 4. Accept each Finding, press Activate. The app moves on to the "Good morning" shell.
 5. Upload the same file again: a second draft appears; activating it archives the first.
 

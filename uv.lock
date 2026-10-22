@@ -102,6 +102,7 @@ version = "0.1.0"
 source = { editable = "api" }
 dependencies = [
     { name = "cadent-core" },
+    { name = "cadent-db" },
     { name = "fastapi" },
     { name = "structlog" },
     { name = "uvicorn", extra = ["standard"] },
@@ -115,6 +116,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "cadent-core", editable = "core" },
+    { name = "cadent-db", editable = "db" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "structlog", specifier = ">=24.4" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
