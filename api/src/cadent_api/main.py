@@ -5,6 +5,8 @@ import logging
 import structlog
 from fastapi import FastAPI
 
+from cadent_api import plans
+
 structlog.configure(
     processors=[
         structlog.processors.add_log_level,
@@ -17,6 +19,7 @@ structlog.configure(
 log = structlog.get_logger()
 
 app = FastAPI(title="Cadent API", version="0.1.0")
+app.include_router(plans.router)
 
 
 @app.get("/health")

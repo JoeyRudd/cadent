@@ -5,6 +5,7 @@ description = "Cadent HTTP API: REST for the web app, and later the MCP endpoint
 requires-python = ">=3.12"
 dependencies = [
     "cadent-core",
+    "cadent-db",
     "fastapi>=0.115",
     "uvicorn[standard]>=0.32",
     "structlog>=24.4",
@@ -15,6 +16,7 @@ dev = ["httpx>=0.27"]
 
 [tool.uv.sources]
 cadent-core = { workspace = true }
+cadent-db = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

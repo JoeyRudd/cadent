@@ -11,5 +11,7 @@ One way to do each common thing. Copy the exemplar; don't invent a variant.
 | A UI colour, radius or font | A token in `web/src/tokens.css`, used through its Tailwind name | `bg-accent-soft` in `web/src/App.tsx` |
 | A table | Typed model in `db/src/cadent_db/models.py` with `UserOwned`; enum-like columns use `one_of`; then `alembic revision --autogenerate` (`/add-migration`) | `Activity` in `db/src/cadent_db/models.py` |
 | A test | Plain pytest functions named for the behaviour they prove | `core/tests/test_rules.py` |
+| A query | `select()` on the request `Session` from `get_db`, always filtered by the `current_user`'s `user_id`; another user's row is a 404 | `owned_plan` in `api/src/cadent_api/plans.py` |
+| An API error | `HTTPException(status, message)`: 404 missing or not yours, 409 wrong state, 422 bad input | `accept_finding` in `api/src/cadent_api/plans.py` |
 
-Patterns for queries, errors, forms and the MCP tools are added the first time each is built.
+Patterns for forms and the MCP tools are added the first time each is built.

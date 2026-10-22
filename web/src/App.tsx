@@ -1,5 +1,11 @@
-/** App shell. The Today and Run detail screens replace the placeholder in weeks 4 and 5. */
+import { useState } from "react";
+
+import { ImportPlan } from "./ImportPlan";
+
+/** App shell. No router: Import until a plan is activated, then Today (weeks 4 and 5). */
 export function App() {
+  const [activated, setActivated] = useState(false);
+  if (!activated) return <ImportPlan onActivated={() => setActivated(true)} />;
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-4 p-5">
       <header>
