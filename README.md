@@ -5,7 +5,7 @@ today's planned run each morning, compares every run to the plan, and checks eve
 injury-prevention rules before you follow it. AI analysis is optional and runs on **your own** AI
 subscription through an MCP server: the app itself makes no AI calls and costs nothing to run beyond hosting.
 
-> Status: week 1 of 8. Built in the open toward a December 2026 release, and used daily for a
+> Status: building toward an MVP (core loop + MCP). Built in the open, and used daily for a
 > half-marathon build (Toronto, May 2, 2027).
 
 ## Why it's built this way
