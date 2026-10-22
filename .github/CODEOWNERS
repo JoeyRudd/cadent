@@ -1,4 +1,0 @@
-# Safety-critical code and its tests need the owner's approval.
-/core/src/cadent_core/rules/ @JoeyRudd
-/core/tests/ @JoeyRudd
-/.github/ @JoeyRudd

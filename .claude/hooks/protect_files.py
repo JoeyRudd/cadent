@@ -1,8 +1,8 @@
 """PreToolUse hook: block agent edits Joey makes by hand, and edits that weaken protected tests.
 
 Protected tests may grow (new rules are added test-first) but never lose a test, lose an assertion
-or gain a skip. Subtler weakening (a changed threshold, an early return) is left to CODEOWNERS and
-the safety-auditor.
+or gain a skip. Subtler weakening (a changed threshold, an early return) is left to the
+safety-auditor and Joey's merge (ADR 011).
 """
 
 import json
@@ -15,7 +15,6 @@ PROTECTED = (
     "core/tests/MIN_TEST_COUNT",
     "core/tests/conftest.py",
     "core/tests/fixtures/golden/",
-    ".github/CODEOWNERS",
 )
 MIGRATIONS = "migrations/versions/"
 PROTECTED_TESTS = "core/tests/"

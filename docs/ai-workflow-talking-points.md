@@ -23,7 +23,8 @@ Notes for describing how Cadent is built. Everything here points at something in
    `not-reviewed`, so it fails closed.
 2. **Rules the agent can't talk its way around.** CLAUDE.md says never weaken a safety test, but
    prose isn't enforcement. A PreToolUse hook blocks the edit, CI checks the test count and skips
-   again, and CODEOWNERS covers the subtle cases. Each layer catches what the previous one can't.
+   again, and the auto-merge allowlist sends every rules or test change to me to read and merge.
+   Each layer catches what the previous one can't.
 3. **Splitting trust by risk.** Claude reviewing Claude's code can share a blind spot (ADR 011
    says so). So auto-merge covers only paths where a bad merge is cheap to revert, and the rules
    engine, its tests, the workflows and `.claude/` itself always come to me.
