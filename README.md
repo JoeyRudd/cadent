@@ -36,7 +36,7 @@ Every change passes `make check`, enforced locally by pre-commit and a Claude Co
 | Dead code | vulture, knip |
 | Duplication | jscpd |
 | Tests | pytest, Hypothesis, Vitest, 90% branch coverage on `core` |
-| Protected safety tests | test-count floor, no skips, CODEOWNERS |
+| Protected safety tests | test-count floor, no skips, never auto-merged |
 
 AI review runs after the deterministic gates. Its verdict only decides whether a low-risk PR can
 merge on its own (see below).
@@ -58,7 +58,7 @@ flowchart LR
 - **Rules in [CLAUDE.md](CLAUDE.md).** The rules-engine tests are the spec and never get weakened, every plan
   goes through `cadent_core.rules.validate`, no new dependency or structural choice without an ADR.
 - **Hooks enforce what prose can't.** A PreToolUse hook ([protect_files.py](.claude/hooks/protect_files.py))
-  blocks edits to golden fixtures, CODEOWNERS and the test-count floor, and any edit to
+  blocks edits to golden fixtures and the test-count floor, and any edit to
   `core/tests/` that removes a test or assertion or adds a skip. A Stop hook runs `make check`
   and refuses to let a session finish while it fails.
 - **Subagents with one job each** ([.claude/agents/](.claude/agents/)): `test-writer` writes tests from the spec, not
