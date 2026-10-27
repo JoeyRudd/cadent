@@ -36,13 +36,13 @@ nothing is exposed to the internet.
 5. **First sync, by hand** (Garmin may ask for an MFA code once; the token is then saved on the volume):
 
    ```bash
-   docker compose exec cadent uv run --project sync python sync/cadent_sync.py
+   docker compose exec cadent uv run --no-dev --project sync python sync/cadent_sync.py
    ```
 
 6. **Daily sync at 6am** with host cron (`crontab -e`; adjust the path):
 
    ```cron
-   0 6 * * * cd /home/joey/cadent && docker compose exec -T cadent uv run --project sync python sync/cadent_sync.py >> sync.log 2>&1
+   0 6 * * * cd /home/joey/cadent && docker compose exec -T cadent uv run --no-dev --project sync python sync/cadent_sync.py >> sync.log 2>&1
    ```
 
    On Windows, use Task Scheduler with the same `docker compose exec -T ...` command.
