@@ -34,8 +34,8 @@ def test_to_row_falls_back_to_elapsed_duration_and_allows_missing_hr():
     assert row["avg_hr"] is None
 
 
-def test_is_run_keeps_only_running_types():
-    for key in ("running", "treadmill_running", "trail_running"):
+def test_is_run_keeps_every_running_type():
+    for key in ("running", "treadmill_running", "trail_running", "track_running"):
         assert is_run(activity(activityType={"typeKey": key}))
     for key in ("cycling", "walking", "strength_training"):
         assert not is_run(activity(activityType={"typeKey": key}))

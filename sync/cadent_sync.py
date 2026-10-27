@@ -7,7 +7,6 @@ from datetime import date, timedelta
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-RUNNING_TYPES = {"running", "treadmill_running", "trail_running"}
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS activities (
@@ -33,7 +32,8 @@ ON CONFLICT(id) DO UPDATE SET
 
 
 def is_run(activity: dict) -> bool:
-    return activity.get("activityType", {}).get("typeKey") in RUNNING_TYPES
+    # Every Garmin running type ends in "running": running, trail_running, track_running, ...
+    return "running" in activity.get("activityType", {}).get("typeKey", "")
 
 
 def to_row(activity: dict) -> dict:
