@@ -1,0 +1,11 @@
+.git
+.github
+.next
+node_modules
+.env*
+!.env.example
+data/*.db*
+data/garmin-tokens
+sync/.venv
+**/__pycache__
+.DS_Store
