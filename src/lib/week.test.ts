@@ -44,6 +44,10 @@ describe("dayStatus", () => {
     expect(dayStatus(10000, 11001, "2026-10-27", "2026-10-28")).toBe("over");
   });
 
+  it("isn't short yet while today is still going", () => {
+    expect(dayStatus(10000, 3000, "2026-10-28", "2026-10-28")).toBe("upcoming");
+  });
+
   it("is missed only once the day has passed", () => {
     expect(dayStatus(5000, 0, "2026-10-27", "2026-10-28")).toBe("missed");
     expect(dayStatus(5000, 0, "2026-10-28", "2026-10-28")).toBe("upcoming");

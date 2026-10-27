@@ -41,7 +41,8 @@ function isRun(activity: Activity): boolean {
 export function dayStatus(planned_m: number, actual_m: number, date: string, today: string): DayStatus {
   if (planned_m === 0) return actual_m > 0 ? "extra" : "rest";
   if (actual_m === 0) return date < today ? "missed" : "upcoming";
-  if (actual_m < planned_m * (1 - TOLERANCE)) return "short";
+  // Today isn't over, so a partial distance isn't short yet.
+  if (actual_m < planned_m * (1 - TOLERANCE)) return date < today ? "short" : "upcoming";
   if (actual_m > planned_m * (1 + TOLERANCE)) return "over";
   return "done";
 }

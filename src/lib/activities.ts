@@ -22,7 +22,8 @@ export function dbPath(): string {
 export function activitiesBetween(from: string, to: string, file = dbPath()): Activity[] {
   // The database lives outside the build; don't let Turbopack trace the whole project for it.
   if (!existsSync(/*turbopackIgnore: true*/ file)) return [];
-  const db = new DatabaseSync(file, { readOnly: true });
+  // timeout: wait out the sync's brief write lock instead of failing the page.
+  const db = new DatabaseSync(file, { readOnly: true, timeout: 5000 });
   try {
     const table = db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'activities'").get();
     if (!table) return [];
