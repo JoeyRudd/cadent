@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Figtree } from "next/font/google";
+import { TabBar } from "@/components/TabBar";
 import "./globals.css";
 
 const figtree = Figtree({
@@ -22,7 +23,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${figtree.variable} h-full antialiased`}>
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full pb-20">
+        {children}
+        <TabBar />
+      </body>
     </html>
   );
 }
