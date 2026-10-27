@@ -8,3 +8,4 @@ One line per choice that isn't obvious. Newest last.
 - **SQLite.** One user, one file, nothing to run or back up beyond copying it.
 - **Hosted at home behind Tailscale.** Private HTTPS to my phone, nothing exposed to the internet, so no login.
 - **Plan is a JSON file.** Edit `data/plan.json` and redeploy; no import screen until someone else uses the app.
+- **Runs record moving time.** The sync stores Garmin's moving duration (elapsed only if moving is missing), so stops at lights don't slow the pace.

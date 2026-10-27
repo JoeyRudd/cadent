@@ -1,0 +1,15 @@
+[project]
+name = "cadent-sync"
+version = "0.1.0"
+description = "Sync Garmin running activities into Cadent's SQLite database."
+requires-python = ">=3.12"
+dependencies = ["garminconnect"]
+
+[dependency-groups]
+dev = ["pytest", "ruff"]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
