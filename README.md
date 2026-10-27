@@ -20,6 +20,8 @@ pnpm install
 pnpm dev
 ```
 
+On the home server: [docs/home-server.md](docs/home-server.md).
+
 ## How I build it
 
 I build Cadent with Claude Code as a pair programmer. Each feature starts as a GitHub issue,

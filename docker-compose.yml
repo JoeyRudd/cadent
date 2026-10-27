@@ -1,0 +1,16 @@
+services:
+  cadent:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - cadent-data:/app/data
+    environment:
+      CADENT_DB: ${CADENT_DB:-/app/data/cadent.db}
+      GARMINTOKENS: ${GARMINTOKENS:-/app/data/garmin-tokens}
+      GARMIN_EMAIL: ${GARMIN_EMAIL:-}
+      GARMIN_PASSWORD: ${GARMIN_PASSWORD:-}
+    restart: unless-stopped
+
+volumes:
+  cadent-data:
