@@ -34,6 +34,11 @@ export function duration(seconds: number): string {
   return seconds % 60 === 0 ? minutes : `${minutes} ${seconds % 60} s`;
 }
 
+/** 26400 s → "7:20" (hours and minutes, for sleep). */
+export function hoursMinutes(seconds: number): string {
+  return pace(Math.round(seconds / 60));
+}
+
 /** "z2" → "Zone 2". */
 export function zoneLabel(zone: string): string {
   return `Zone ${zone.replace(/^z/, "")}`;

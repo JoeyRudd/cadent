@@ -15,7 +15,8 @@ export type Activity = {
 };
 
 export function dbPath(): string {
-  return process.env.CADENT_DB ?? path.join(process.cwd(), "data", "cadent.db");
+  // `||`, not `??`: .env leaves CADENT_DB empty to mean the default.
+  return process.env.CADENT_DB || path.join(process.cwd(), "data", "cadent.db");
 }
 
 /** Activities dated `from` to `to`, inclusive. */

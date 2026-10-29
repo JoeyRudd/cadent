@@ -1,6 +1,7 @@
 import sqlite3
+from datetime import date, timedelta
 
-from cadent_sync import is_run, save, to_row
+from cadent_sync import fetch_wellness, is_run, save, save_wellness, to_row, to_wellness_row
 
 
 def activity(**overrides) -> dict:
@@ -61,3 +62,55 @@ def test_save_updates_an_edited_activity():
     save(conn, [activity()])
     save(conn, [activity(distance=10000.4)])
     assert conn.execute("SELECT distance_m FROM activities").fetchall() == [(10000,)]
+
+
+def test_to_wellness_row_maps_garmin_fields():
+    hrv = {"hrvSummary": {"lastNightAvg": 57.6, "weeklyAvg": 55.2, "status": "BALANCED"}}
+    sleep = {"dailySleepDTO": {"sleepTimeSeconds": 26400}}
+    stats = {"restingHeartRate": 52}
+    assert to_wellness_row("2026-10-29", hrv, sleep, stats) == {
+        "date": "2026-10-29",
+        "hrv_ms": 58,
+        "hrv_week_ms": 55,
+        "hrv_status": "BALANCED",
+        "sleep_s": 26400,
+        "rhr": 52,
+    }
+
+
+def test_to_wellness_row_allows_a_night_without_data():
+    no_sleep = {"dailySleepDTO": {"sleepTimeSeconds": 0}}
+    assert to_wellness_row("2026-10-29", None, no_sleep, {}) == {
+        "date": "2026-10-29",
+        "hrv_ms": None,
+        "hrv_week_ms": None,
+        "hrv_status": None,
+        "sleep_s": None,
+        "rhr": None,
+    }
+
+
+def test_save_wellness_upserts_by_date_and_keeps_values_a_resync_lacks():
+    conn = sqlite3.connect(":memory:")
+    sleep = {"dailySleepDTO": {"sleepTimeSeconds": 26400}}
+    save_wellness(conn, [to_wellness_row("2026-10-29", None, sleep, {"restingHeartRate": 55})])
+    save_wellness(conn, [to_wellness_row("2026-10-29", None, {}, {"restingHeartRate": 52})])
+    assert conn.execute("SELECT date, sleep_s, rhr FROM wellness").fetchall() == [
+        ("2026-10-29", 26400, 52)
+    ]
+
+
+def test_fetch_wellness_covers_today_and_the_days_before():
+    class FakeGarmin:
+        def get_hrv_data(self, day):
+            return None
+
+        def get_sleep_data(self, day):
+            return {}
+
+        def get_stats(self, day):
+            return {"restingHeartRate": 50}
+
+    today = date.today()
+    rows = fetch_wellness(FakeGarmin(), 7)
+    assert [r["date"] for r in rows] == [(today - timedelta(days=n)).isoformat() for n in range(8)]

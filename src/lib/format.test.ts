@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { blockLabel, dayLabel, duration, km, pace, weekday, zoneLabel } from "./format";
+import { blockLabel, dayLabel, duration, hoursMinutes, km, pace, weekday, zoneLabel } from "./format";
 
 describe("units", () => {
   it("formats distance, pace and duration", () => {
@@ -11,6 +11,8 @@ describe("units", () => {
     expect(duration(20)).toBe("20 s");
     expect(duration(300)).toBe("5 min");
     expect(duration(90)).toBe("1 min 30 s");
+    expect(hoursMinutes(26400)).toBe("7:20");
+    expect(hoursMinutes(25530)).toBe("7:06");
     expect(zoneLabel("z2")).toBe("Zone 2");
   });
 
