@@ -63,7 +63,7 @@ export function isDay(value: string): boolean {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 
-function allSessions(plan: Plan): Session[] {
+export function allSessions(plan: Plan): Session[] {
   return plan.weeks.flatMap((week) => week.sessions);
 }
 
