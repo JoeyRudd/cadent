@@ -6,6 +6,8 @@ services:
     volumes:
       - cadent-data:/app/data
     environment:
+      # Same zone as TIME_ZONE in src/lib/plan.ts (see DECISIONS.md).
+      TZ: America/Toronto
       CADENT_DB: ${CADENT_DB:-/app/data/cadent.db}
       GARMINTOKENS: ${GARMINTOKENS:-/app/data/garmin-tokens}
       GARMIN_EMAIL: ${GARMIN_EMAIL:-}
