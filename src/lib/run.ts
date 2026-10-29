@@ -3,7 +3,7 @@
 
 import type { Activity } from "./activities";
 import { sessionsOn, type Plan, type Run } from "./plan";
-import { dayStatus, isRun, type DayStatus } from "./week";
+import { dayStatus, isRun, TOLERANCE, type DayStatus } from "./week";
 
 export type Recorded = {
   distance_m: number;
@@ -24,7 +24,21 @@ export type RunDetail = {
   zone?: [number, number];
   /** Average heart rate against the zone; only when both exist. */
   hr?: "below" | "in" | "above";
+  /** Average pace against the plan's target; only when both exist. */
+  pace?: "fast" | "on" | "slow";
 };
+
+/** Inside a [fast, slow] range, or within the tolerance of a single "~" target. */
+function versusPace(target: NonNullable<Run["pace_s_per_km"]>, actual: number): RunDetail["pace"] {
+  // Sorted, so a range written [slow, fast] still reads the right way round.
+  const [fast, slow] =
+    typeof target === "number"
+      ? [target * (1 - TOLERANCE), target * (1 + TOLERANCE)]
+      : [...target].sort((a, b) => a - b);
+  if (actual < fast) return "fast";
+  if (actual > slow) return "slow";
+  return "on";
+}
 
 /** Every run Garmin recorded that day as one: summed distance and time, heart rate averaged over time. */
 function combine(runs: Activity[]): Recorded | undefined {
@@ -55,6 +69,11 @@ export function runDetail(plan: Plan, activities: Activity[], date: string, toda
     else hr = "in";
   }
 
+  const pace =
+    run?.pace_s_per_km !== undefined && recorded?.pace_s_per_km != null
+      ? versusPace(run.pace_s_per_km, recorded.pace_s_per_km)
+      : undefined;
+
   return {
     run,
     planned_m,
@@ -62,5 +81,6 @@ export function runDetail(plan: Plan, activities: Activity[], date: string, toda
     status: dayStatus(planned_m, recorded?.distance_m ?? 0, date, today),
     zone,
     hr,
+    pace,
   };
 }

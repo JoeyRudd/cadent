@@ -4,8 +4,8 @@
 import type { Activity } from "./activities";
 import type { Plan, Run } from "./plan";
 
-/** Within ±10% of the planned distance counts as on plan. */
-const TOLERANCE = 0.1;
+/** Within ±10% of the plan counts as on plan. */
+export const TOLERANCE = 0.1;
 
 export type DayStatus = "done" | "short" | "over" | "missed" | "upcoming" | "rest" | "extra";
 

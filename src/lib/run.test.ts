@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Activity } from "./activities";
-import type { Plan } from "./plan";
+import type { Plan, Run } from "./plan";
 import { runDetail } from "./run";
 
 const plan: Plan = {
@@ -44,6 +44,7 @@ describe("runDetail", () => {
       status: "done",
       zone: [142, 158],
       hr: "in",
+      pace: undefined,
     });
   });
 
@@ -76,6 +77,7 @@ describe("runDetail", () => {
       status: "missed",
       zone: undefined,
       hr: undefined,
+      pace: undefined,
     });
   });
 
@@ -86,6 +88,22 @@ describe("runDetail", () => {
 
   it("has no pace for a run without distance", () => {
     expect(runDetail(plan, [activity({ distance_m: 0 })], "2026-10-27", TODAY).recorded?.pace_s_per_km).toBeNull();
+  });
+
+  it("compares pace with a target range or a single value within ±10%", () => {
+    // 6200 m in 2480 s is 6:40 /km.
+    const verdict = (pace_s_per_km: NonNullable<Run["pace_s_per_km"]>) => {
+      const run: Run = { date: "2026-10-27", kind: "run", type: "easy", distance_m: 6000, pace_s_per_km };
+      return runDetail({ ...plan, weeks: [{ ...plan.weeks[0], sessions: [run] }] }, [activity({})], "2026-10-27", TODAY)
+        .pace;
+    };
+    expect(verdict([390, 420])).toBe("on");
+    expect(verdict([420, 390])).toBe("on");
+    expect(verdict([410, 440])).toBe("fast");
+    expect(verdict([360, 390])).toBe("slow");
+    expect(verdict(405)).toBe("on");
+    expect(verdict(450)).toBe("fast");
+    expect(verdict(360)).toBe("slow");
   });
 
   it("keeps a run on a rest day as an extra", () => {

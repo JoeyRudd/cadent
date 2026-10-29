@@ -5,7 +5,7 @@ import { Suspense } from "react";
 
 import { CheckIn } from "@/components/CheckIn";
 import { activitiesBetween } from "@/lib/activities";
-import { clock, km, pace, runTypeLabel, shortDayLabel, zoneLabel } from "@/lib/format";
+import { clock, km, pace, paceTarget, runTypeLabel, shortDayLabel, zoneLabel } from "@/lib/format";
 import { checkInOn } from "@/lib/checkins";
 import { isDay, localDate, plan } from "@/lib/plan";
 import { runDetail, type RunDetail } from "@/lib/run";
@@ -93,6 +93,13 @@ async function Detail({ params }: { params: Promise<{ date: string }> }) {
               label="Pace"
               value={recorded?.pace_s_per_km != null ? pace(recorded.pace_s_per_km) : undefined}
               unit="/km"
+              plan={run?.pace_s_per_km !== undefined ? `Plan ${paceTarget(run.pace_s_per_km)}` : undefined}
+              pill={
+                detail.pace && {
+                  label: { fast: "Faster", on: "On target", slow: "Slower" }[detail.pace],
+                  onPlan: detail.pace === "on",
+                }
+              }
             />
             <Tile
               label="Avg heart rate"
