@@ -13,21 +13,23 @@ this file records the rules they encode.
 
 ## Tokens
 
-| Token | Light | Use |
-| --- | --- | --- |
-| `bg` | `#F4F5EF` | Page |
-| `surface` | `#FFFFFF` | Cards |
-| `line` | `#DFE3D5` | Borders |
-| `ink` / `muted` | `#20271F` / `#5D665B` | Text |
-| `accent` | `#277A70` | Primary actions, today's session |
-| `accent-soft` / `accent-ink` | `#E1EFEA` / `#1F6259` | Today's hero card |
-| `on-plan` / `on-plan-soft` | `#2F6A3B` / `#E1EDDD` | Target hit |
-| `off-plan` / `off-plan-soft` | `#7E5A10` / `#FAEED3` | Over or under, gentle |
-| `warning` | `#A3412D` | Safety rules only |
-| `rounded-card` / `rounded-button` | 20px / 14px | Shapes |
+| Token | Light | Dark | Use |
+| --- | --- | --- | --- |
+| `bg` | `#F4F5EF` | `#141A17` | Page |
+| `surface` | `#FFFFFF` | `#1C2420` | Cards |
+| `line` | `#DFE3D5` | `#2C3631` | Borders |
+| `ink` / `muted` | `#20271F` / `#5D665B` | `#ECF0EC` / `#A0AAA3` | Text |
+| `accent` / `on-accent` | `#277A70` / `#FFFFFF` | `#5FB3A7` / `#0F2420` | Primary actions, today's session |
+| `accent-soft` / `accent-ink` | `#E1EFEA` / `#1F6259` | `#1E3430` / `#9FD3CA` | Today's hero card |
+| `on-plan` / `on-plan-soft` | `#2F6A3B` / `#E1EDDD` | `#8FD4A8` / `#1A3324` | Target hit |
+| `off-plan` / `off-plan-soft` | `#7E5A10` / `#FAEED3` | `#F0C47A` / `#36291A` | Over or under, gentle |
+| `warning` | `#A3412D` | `#E8836C` | Safety rules only |
+| `rounded-card` / `rounded-button` | 20px / 14px | | Shapes |
 
-Font: Figtree via `next/font` (self-hosted at build), tabular figures on every number. Dark-mode
-values are in `globals.css` and still need a contrast check.
+Font: Figtree via `next/font` (self-hosted at build), tabular figures on every number. Dark values
+apply under `prefers-color-scheme: dark`. Every text/background token pair the app uses meets
+WCAG AA (4.5:1) in both modes; fading text with `opacity` can break that. `line` is for
+decorative borders only (about 1.3:1 on `surface`), so never let a border alone carry meaning.
 
 ## Rules
 

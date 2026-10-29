@@ -1,11 +1,16 @@
 import Link from "next/link";
 
-import { blockLabel, duration, km, runTypeLabel, zoneLabel } from "@/lib/format";
+import { blockLabel, extraLabel, km, paceTarget, runTypeLabel, zoneLabel } from "@/lib/format";
 import type { Plan, Run } from "@/lib/plan";
 
 // Today's run as the hero card: the distance is the number that matters.
 export function RunCard({ run, zones, week }: { run: Run; zones: Plan["zones"]; week?: number }) {
   const range = run.zone ? zones[run.zone] : undefined;
+  const pills = [
+    run.zone && `${zoneLabel(run.zone)}${range ? ` · ${range[0]}–${range[1]} bpm` : ""}`,
+    run.pace_s_per_km !== undefined && paceTarget(run.pace_s_per_km),
+    ...(run.extras ?? []).map((extra) => `+ ${extraLabel(extra)}`),
+  ].filter((pill): pill is string => !!pill);
 
   return (
     <section className="flex flex-col gap-3.5 rounded-card bg-accent-soft p-5.5 text-accent-ink">
@@ -21,18 +26,11 @@ export function RunCard({ run, zones, week }: { run: Run; zones: Plan["zones"]; 
         <span className="text-2xl font-semibold">km</span>
       </p>
 
-      {(run.zone || !!run.extras?.length) && (
+      {pills.length > 0 && (
         <ul className="flex flex-wrap gap-2">
-          {run.zone && (
-            <li className="rounded-full bg-surface px-2.5 py-1.5 text-sm text-ink">
-              {zoneLabel(run.zone)}
-              {range && ` · ${range[0]}–${range[1]} bpm`}
-            </li>
-          )}
-          {run.extras?.map((extra, i) => (
+          {pills.map((pill, i) => (
             <li key={i} className="rounded-full bg-surface px-2.5 py-1.5 text-sm text-ink">
-              + {extra.reps ? `${extra.reps} × ` : ""}
-              {duration(extra.duration_s)} {extra.type}
+              {pill}
             </li>
           ))}
         </ul>

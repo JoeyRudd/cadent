@@ -36,14 +36,14 @@ nothing is exposed to the internet.
 5. **First sync, by hand** (Garmin may ask for an MFA code once; the token is then saved on the volume):
 
    ```bash
-   docker compose exec cadent uv run --project sync python sync/cadent_sync.py
+   docker compose exec cadent uv run --no-dev --project sync python sync/cadent_sync.py
    ```
 
 6. **Sync hourly from 6am to noon** with host cron (`crontab -e`; adjust the path). Later runs
    pick up the overnight data the watch uploads after 6am:
 
    ```cron
-   0 6-12 * * * cd /home/joey/cadent && docker compose exec -T cadent uv run --project sync python sync/cadent_sync.py >> sync.log 2>&1
+   0 6-12 * * * cd /home/joey/cadent && docker compose exec -T cadent uv run --no-dev --project sync python sync/cadent_sync.py >> sync.log 2>&1
    ```
 
    Cron uses the host's clock, so the host must be on Toronto time. On Windows, use Task Scheduler

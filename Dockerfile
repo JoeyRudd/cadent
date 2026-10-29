@@ -25,7 +25,7 @@ COPY --from=builder --chown=node:node /app/sync ./sync
 
 USER node
 # Pre-install the sync script's dependencies so the daily run doesn't download them.
-RUN if [ -f sync/pyproject.toml ]; then uv sync --project sync --python 3.12; fi
+RUN if [ -f sync/pyproject.toml ]; then uv sync --project sync --python 3.12 --no-dev; fi
 
 EXPOSE 3000
 CMD ["node", "server.js"]

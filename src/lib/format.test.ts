@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { blockLabel, dayLabel, duration, hoursMinutes, km, pace, weekday, zoneLabel } from "./format";
+import {
+  blockLabel,
+  dayLabel,
+  duration,
+  extraLabel,
+  hoursMinutes,
+  km,
+  pace,
+  paceTarget,
+  weekday,
+  zoneLabel,
+} from "./format";
 
 describe("units", () => {
   it("formats distance, pace and duration", () => {
@@ -42,5 +53,18 @@ describe("blockLabel", () => {
     );
     expect(blockLabel({ label: "strides", reps: 2 }).detail).toBe("× 2");
     expect(blockLabel({ label: "cool-down" })).toEqual({ name: "Cool-down", detail: "" });
+  });
+});
+
+describe("run pills", () => {
+  it("formats a single pace target as approximate and a range as is", () => {
+    expect(paceTarget(405)).toBe("~6:45 /km");
+    expect(paceTarget([390, 420])).toBe("6:30–7:00 /km");
+  });
+
+  it("formats extras with a rep range, single reps or no reps", () => {
+    expect(extraLabel({ type: "strides", reps: [4, 6], duration_s: 20 })).toBe("Strides 4–6 × 20 s");
+    expect(extraLabel({ type: "strides", reps: 4, duration_s: 20 })).toBe("Strides 4 × 20 s");
+    expect(extraLabel({ type: "strides", duration_s: 20 })).toBe("20 s strides");
   });
 });
