@@ -1,7 +1,11 @@
 import Link from "next/link";
+import { connection } from "next/server";
+import { Suspense } from "react";
 
 import { AppearancePicker } from "@/components/AppearancePicker";
+import { GarminConnect } from "@/components/GarminConnect";
 import { ICON_BUTTON } from "@/components/iconButton";
+import { garminAccount } from "@/lib/garmin";
 
 export default function Settings() {
   return (
@@ -31,6 +35,18 @@ export default function Settings() {
         </div>
         <AppearancePicker />
       </section>
+
+      <Suspense>
+        <Garmin />
+      </Suspense>
     </main>
   );
+}
+
+// Reads the saved token, so it renders per request instead of at build time.
+async function Garmin() {
+  await connection();
+  const account = garminAccount();
+  // Keyed so connecting or disconnecting starts the form fresh.
+  return <GarminConnect key={account ? "connected" : "disconnected"} account={account} />;
 }

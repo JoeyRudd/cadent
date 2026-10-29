@@ -9,7 +9,8 @@ import { WeekStrip } from "@/components/WeekStrip";
 import { ICON_BUTTON } from "@/components/iconButton";
 import { activitiesBetween } from "@/lib/activities";
 import { dayLabel, km, runTypeLabel, weekday } from "@/lib/format";
-import { localDate, nextRun, plan, sessionsOn, type Lift, type Run } from "@/lib/plan";
+import { currentPlan } from "@/lib/moves";
+import { localDate, nextRun, sessionsOn, type Lift, type Plan, type Run } from "@/lib/plan";
 import { addDays, weekBounds, weekOf } from "@/lib/week";
 import { readinessOn, wellnessBetween } from "@/lib/wellness";
 
@@ -27,9 +28,10 @@ export default function Home() {
 async function Today() {
   await connection();
   const day = localDate(new Date());
+  const plan = currentPlan();
   const sessions = sessionsOn(plan, day);
   const lift = sessions.find((s): s is Lift => s.kind === "lift");
-  const week = thisWeek(day);
+  const week = thisWeek(plan, day);
   const readiness = lastNight(day);
 
   return (
@@ -60,7 +62,7 @@ async function Today() {
       </header>
 
       <div className="mt-4 space-y-4">
-        <Hero day={day} run={sessions.find((s): s is Run => s.kind === "run")} week={week?.index} />
+        <Hero plan={plan} day={day} run={sessions.find((s): s is Run => s.kind === "run")} week={week?.index} />
         {readiness && <Readiness readiness={readiness} />}
         {week && <WeekStrip week={week} today={day} />}
         {lift && (
@@ -75,7 +77,7 @@ async function Today() {
 }
 
 /** This week against Garmin. A database error hides the week card rather than today's run. */
-function thisWeek(day: string) {
+function thisWeek(plan: Plan, day: string) {
   const bounds = weekBounds(plan, day);
   if (!bounds) return undefined;
   try {
@@ -96,7 +98,7 @@ function lastNight(day: string) {
   }
 }
 
-function Hero({ day, run, week }: { day: string; run: Run | undefined; week?: number }) {
+function Hero({ plan, day, run, week }: { plan: Plan; day: string; run: Run | undefined; week?: number }) {
   const start = plan.weeks[0].start;
   if (day < start) return <Message>Plan starts {dayLabel(start)}.</Message>;
   if (day > plan.race.date) return <Message>Plan complete. Well run.</Message>;

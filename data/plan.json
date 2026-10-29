@@ -122,14 +122,14 @@
           "date": "2026-10-27",
           "kind": "run",
           "type": "easy",
-          "distance_m": 5000,
+          "distance_m": 8000,
           "zone": "z2"
         },
         {
           "date": "2026-10-28",
           "kind": "run",
           "type": "tempo",
-          "distance_m": 7000,
+          "distance_m": 8000,
           "blocks": [
             {
               "label": "warm-up",
@@ -166,7 +166,7 @@
           "date": "2026-10-29",
           "kind": "run",
           "type": "easy",
-          "distance_m": 5000,
+          "distance_m": 7000,
           "zone": "z2",
           "extras": [
             {
@@ -179,7 +179,7 @@
           "date": "2026-10-31",
           "kind": "run",
           "type": "long",
-          "distance_m": 14000,
+          "distance_m": 15000,
           "zone": "z2"
         },
         {
@@ -187,13 +187,6 @@
           "kind": "lift",
           "name": "Upper",
           "after_run": true
-        },
-        {
-          "date": "2026-11-01",
-          "kind": "run",
-          "type": "easy",
-          "distance_m": 5000,
-          "zone": "z2"
         }
       ]
     },
@@ -211,20 +204,35 @@
           "date": "2026-11-03",
           "kind": "run",
           "type": "easy",
-          "distance_m": 5000,
+          "distance_m": 7000,
           "zone": "z2"
         },
         {
           "date": "2026-11-04",
           "kind": "run",
-          "type": "easy",
-          "distance_m": 5000,
-          "zone": "z2",
-          "extras": [
+          "type": "race",
+          "distance_m": 8000,
+          "blocks": [
             {
-              "type": "strides",
-              "reps": 4,
-              "duration_s": 20
+              "label": "warm-up",
+              "distance_m": 2000,
+              "zone": "z2"
+            },
+            {
+              "label": "drills"
+            },
+            {
+              "label": "strides",
+              "reps": 2
+            },
+            {
+              "label": "5K time trial",
+              "distance_m": 5000
+            },
+            {
+              "label": "cool-down",
+              "distance_m": 1000,
+              "zone": "z2"
             }
           ]
         },
@@ -239,19 +247,13 @@
           "kind": "run",
           "type": "easy",
           "distance_m": 5000,
-          "zone": "z2",
-          "extras": [
-            {
-              "type": "strides",
-              "duration_s": 20
-            }
-          ]
+          "zone": "z2"
         },
         {
           "date": "2026-11-07",
           "kind": "run",
           "type": "long",
-          "distance_m": 12000,
+          "distance_m": 11000,
           "zone": "z2"
         },
         {
@@ -259,13 +261,6 @@
           "kind": "lift",
           "name": "Upper",
           "after_run": true
-        },
-        {
-          "date": "2026-11-08",
-          "kind": "run",
-          "type": "easy",
-          "distance_m": 5000,
-          "zone": "z2"
         }
       ]
     },
@@ -283,103 +278,14 @@
           "date": "2026-11-10",
           "kind": "run",
           "type": "easy",
-          "distance_m": 6000,
-          "zone": "z2"
-        },
-        {
-          "date": "2026-11-11",
-          "kind": "run",
-          "type": "tempo",
-          "distance_m": 7000,
-          "blocks": [
-            {
-              "label": "warm-up",
-              "distance_m": 2000,
-              "zone": "z2"
-            },
-            {
-              "label": "drills",
-              "duration_s": 300
-            },
-            {
-              "label": "sub-threshold",
-              "reps": 3,
-              "pace_s_per_km": [
-                340,
-                355
-              ],
-              "recovery_s": 60,
-              "duration_s": 480
-            },
-            {
-              "label": "cool-down",
-              "zone": "z2"
-            }
-          ]
-        },
-        {
-          "date": "2026-11-11",
-          "kind": "lift",
-          "name": "Full-body B",
-          "after_run": true
-        },
-        {
-          "date": "2026-11-12",
-          "kind": "run",
-          "type": "easy",
-          "distance_m": 6000,
-          "zone": "z2",
-          "extras": [
-            {
-              "type": "strides",
-              "duration_s": 20
-            }
-          ]
-        },
-        {
-          "date": "2026-11-14",
-          "kind": "run",
-          "type": "long",
-          "distance_m": 16000,
-          "zone": "z2"
-        },
-        {
-          "date": "2026-11-14",
-          "kind": "lift",
-          "name": "Upper",
-          "after_run": true
-        },
-        {
-          "date": "2026-11-15",
-          "kind": "run",
-          "type": "easy",
-          "distance_m": 5000,
-          "zone": "z2"
-        }
-      ]
-    },
-    {
-      "index": 20,
-      "start": "2026-11-16",
-      "cutback": false,
-      "sessions": [
-        {
-          "date": "2026-11-16",
-          "kind": "lift",
-          "name": "Full-body A"
-        },
-        {
-          "date": "2026-11-17",
-          "kind": "run",
-          "type": "easy",
-          "distance_m": 6000,
-          "zone": "z2"
-        },
-        {
-          "date": "2026-11-18",
-          "kind": "run",
-          "type": "tempo",
           "distance_m": 8000,
+          "zone": "z2"
+        },
+        {
+          "date": "2026-11-11",
+          "kind": "run",
+          "type": "tempo",
+          "distance_m": 9000,
           "blocks": [
             {
               "label": "warm-up",
@@ -407,16 +313,16 @@
           ]
         },
         {
-          "date": "2026-11-18",
+          "date": "2026-11-11",
           "kind": "lift",
           "name": "Full-body B",
           "after_run": true
         },
         {
-          "date": "2026-11-19",
+          "date": "2026-11-12",
           "kind": "run",
           "type": "easy",
-          "distance_m": 6000,
+          "distance_m": 8000,
           "zone": "z2",
           "extras": [
             {
@@ -426,49 +332,42 @@
           ]
         },
         {
-          "date": "2026-11-21",
+          "date": "2026-11-14",
           "kind": "run",
           "type": "long",
-          "distance_m": 17000,
+          "distance_m": 16000,
           "zone": "z2"
         },
         {
-          "date": "2026-11-21",
+          "date": "2026-11-14",
           "kind": "lift",
           "name": "Upper",
           "after_run": true
-        },
-        {
-          "date": "2026-11-22",
-          "kind": "run",
-          "type": "easy",
-          "distance_m": 6000,
-          "zone": "z2"
         }
       ]
     },
     {
-      "index": 21,
-      "start": "2026-11-23",
+      "index": 20,
+      "start": "2026-11-16",
       "cutback": false,
       "sessions": [
         {
-          "date": "2026-11-23",
+          "date": "2026-11-16",
           "kind": "lift",
           "name": "Full-body A"
         },
         {
-          "date": "2026-11-24",
+          "date": "2026-11-17",
           "kind": "run",
           "type": "easy",
-          "distance_m": 7000,
+          "distance_m": 9000,
           "zone": "z2"
         },
         {
-          "date": "2026-11-25",
+          "date": "2026-11-18",
           "kind": "run",
           "type": "tempo",
-          "distance_m": 8000,
+          "distance_m": 9000,
           "blocks": [
             {
               "label": "warm-up",
@@ -496,16 +395,16 @@
           ]
         },
         {
-          "date": "2026-11-25",
+          "date": "2026-11-18",
           "kind": "lift",
           "name": "Full-body B",
           "after_run": true
         },
         {
-          "date": "2026-11-26",
+          "date": "2026-11-19",
           "kind": "run",
           "type": "easy",
-          "distance_m": 7000,
+          "distance_m": 9000,
           "zone": "z2",
           "extras": [
             {
@@ -515,123 +414,42 @@
           ]
         },
         {
-          "date": "2026-11-28",
+          "date": "2026-11-21",
           "kind": "run",
           "type": "long",
-          "distance_m": 18000,
-          "zone": "z2",
-          "blocks": [
-            {
-              "label": "easy, about 2:00",
-              "distance_m": 18000,
-              "duration_s": 7200,
-              "zone": "z2"
-            }
-          ]
+          "distance_m": 17000,
+          "zone": "z2"
         },
         {
-          "date": "2026-11-28",
+          "date": "2026-11-21",
           "kind": "lift",
           "name": "Upper",
           "after_run": true
-        },
-        {
-          "date": "2026-11-29",
-          "kind": "run",
-          "type": "easy",
-          "distance_m": 6000,
-          "zone": "z2"
         }
       ]
     },
     {
-      "index": 22,
-      "start": "2026-11-30",
-      "cutback": true,
-      "sessions": [
-        {
-          "date": "2026-11-30",
-          "kind": "lift",
-          "name": "Full-body A"
-        },
-        {
-          "date": "2026-12-01",
-          "kind": "run",
-          "type": "easy",
-          "distance_m": 5000,
-          "zone": "z2"
-        },
-        {
-          "date": "2026-12-02",
-          "kind": "run",
-          "type": "easy",
-          "distance_m": 6000,
-          "zone": "z2",
-          "extras": [
-            {
-              "type": "strides",
-              "reps": 4,
-              "duration_s": 20
-            }
-          ]
-        },
-        {
-          "date": "2026-12-02",
-          "kind": "lift",
-          "name": "Full-body B",
-          "after_run": true
-        },
-        {
-          "date": "2026-12-03",
-          "kind": "run",
-          "type": "easy",
-          "distance_m": 6000,
-          "zone": "z2"
-        },
-        {
-          "date": "2026-12-05",
-          "kind": "run",
-          "type": "long",
-          "distance_m": 14000,
-          "zone": "z2"
-        },
-        {
-          "date": "2026-12-05",
-          "kind": "lift",
-          "name": "Upper",
-          "after_run": true
-        },
-        {
-          "date": "2026-12-06",
-          "kind": "run",
-          "type": "easy",
-          "distance_m": 5000,
-          "zone": "z2"
-        }
-      ]
-    },
-    {
-      "index": 23,
-      "start": "2026-12-07",
+      "index": 21,
+      "start": "2026-11-23",
       "cutback": false,
       "sessions": [
         {
-          "date": "2026-12-07",
+          "date": "2026-11-23",
           "kind": "lift",
           "name": "Full-body A"
         },
         {
-          "date": "2026-12-08",
+          "date": "2026-11-24",
           "kind": "run",
           "type": "easy",
-          "distance_m": 7000,
+          "distance_m": 9000,
           "zone": "z2"
         },
         {
-          "date": "2026-12-09",
+          "date": "2026-11-25",
           "kind": "run",
           "type": "tempo",
-          "distance_m": 9000,
+          "distance_m": 10000,
           "blocks": [
             {
               "label": "warm-up",
@@ -659,16 +477,16 @@
           ]
         },
         {
-          "date": "2026-12-09",
+          "date": "2026-11-25",
           "kind": "lift",
           "name": "Full-body B",
           "after_run": true
         },
         {
-          "date": "2026-12-10",
+          "date": "2026-11-26",
           "kind": "run",
           "type": "easy",
-          "distance_m": 7000,
+          "distance_m": 9000,
           "zone": "z2",
           "extras": [
             {
@@ -678,83 +496,39 @@
           ]
         },
         {
-          "date": "2026-12-12",
+          "date": "2026-11-28",
           "kind": "run",
           "type": "long",
           "distance_m": 18000,
           "zone": "z2"
         },
         {
-          "date": "2026-12-12",
+          "date": "2026-11-28",
           "kind": "lift",
           "name": "Upper",
           "after_run": true
-        },
-        {
-          "date": "2026-12-13",
-          "kind": "run",
-          "type": "easy",
-          "distance_m": 6000,
-          "zone": "z2"
         }
       ]
     },
     {
-      "index": 24,
-      "start": "2026-12-14",
-      "cutback": false,
+      "index": 22,
+      "start": "2026-11-30",
+      "cutback": true,
       "sessions": [
         {
-          "date": "2026-12-14",
+          "date": "2026-11-30",
           "kind": "lift",
           "name": "Full-body A"
         },
         {
-          "date": "2026-12-15",
+          "date": "2026-12-01",
           "kind": "run",
           "type": "easy",
           "distance_m": 7000,
           "zone": "z2"
         },
         {
-          "date": "2026-12-16",
-          "kind": "run",
-          "type": "tempo",
-          "distance_m": 9000,
-          "blocks": [
-            {
-              "label": "warm-up",
-              "distance_m": 2000,
-              "zone": "z2"
-            },
-            {
-              "label": "drills",
-              "duration_s": 300
-            },
-            {
-              "label": "sub-threshold",
-              "reps": 6,
-              "pace_s_per_km": [
-                340,
-                355
-              ],
-              "recovery_s": 60,
-              "duration_s": 240
-            },
-            {
-              "label": "cool-down",
-              "zone": "z2"
-            }
-          ]
-        },
-        {
-          "date": "2026-12-16",
-          "kind": "lift",
-          "name": "Full-body B",
-          "after_run": true
-        },
-        {
-          "date": "2026-12-17",
+          "date": "2026-12-02",
           "kind": "run",
           "type": "easy",
           "distance_m": 8000,
@@ -762,51 +536,58 @@
           "extras": [
             {
               "type": "strides",
+              "reps": 4,
               "duration_s": 20
             }
           ]
         },
         {
-          "date": "2026-12-19",
-          "kind": "run",
-          "type": "long",
-          "distance_m": 19000,
-          "zone": "z2"
-        },
-        {
-          "date": "2026-12-19",
+          "date": "2026-12-02",
           "kind": "lift",
-          "name": "Upper",
+          "name": "Full-body B",
           "after_run": true
         },
         {
-          "date": "2026-12-20",
-          "kind": "run",
-          "type": "easy",
-          "distance_m": 6000,
-          "zone": "z2"
-        }
-      ]
-    },
-    {
-      "index": 25,
-      "start": "2026-12-21",
-      "cutback": false,
-      "sessions": [
-        {
-          "date": "2026-12-21",
-          "kind": "lift",
-          "name": "Full-body A"
-        },
-        {
-          "date": "2026-12-22",
+          "date": "2026-12-03",
           "kind": "run",
           "type": "easy",
           "distance_m": 7000,
           "zone": "z2"
         },
         {
-          "date": "2026-12-23",
+          "date": "2026-12-05",
+          "kind": "run",
+          "type": "long",
+          "distance_m": 14000,
+          "zone": "z2"
+        },
+        {
+          "date": "2026-12-05",
+          "kind": "lift",
+          "name": "Upper",
+          "after_run": true
+        }
+      ]
+    },
+    {
+      "index": 23,
+      "start": "2026-12-07",
+      "cutback": false,
+      "sessions": [
+        {
+          "date": "2026-12-07",
+          "kind": "lift",
+          "name": "Full-body A"
+        },
+        {
+          "date": "2026-12-08",
+          "kind": "run",
+          "type": "easy",
+          "distance_m": 10000,
+          "zone": "z2"
+        },
+        {
+          "date": "2026-12-09",
           "kind": "run",
           "type": "tempo",
           "distance_m": 10000,
@@ -827,8 +608,172 @@
                 340,
                 355
               ],
-              "recovery_s": 90,
+              "recovery_s": 60,
               "duration_s": 720
+            },
+            {
+              "label": "cool-down",
+              "zone": "z2"
+            }
+          ]
+        },
+        {
+          "date": "2026-12-09",
+          "kind": "lift",
+          "name": "Full-body B",
+          "after_run": true
+        },
+        {
+          "date": "2026-12-10",
+          "kind": "run",
+          "type": "easy",
+          "distance_m": 10000,
+          "zone": "z2",
+          "extras": [
+            {
+              "type": "strides",
+              "duration_s": 20
+            }
+          ]
+        },
+        {
+          "date": "2026-12-12",
+          "kind": "run",
+          "type": "long",
+          "distance_m": 18000,
+          "zone": "z2"
+        },
+        {
+          "date": "2026-12-12",
+          "kind": "lift",
+          "name": "Upper",
+          "after_run": true
+        }
+      ]
+    },
+    {
+      "index": 24,
+      "start": "2026-12-14",
+      "cutback": false,
+      "sessions": [
+        {
+          "date": "2026-12-14",
+          "kind": "lift",
+          "name": "Full-body A"
+        },
+        {
+          "date": "2026-12-15",
+          "kind": "run",
+          "type": "easy",
+          "distance_m": 10000,
+          "zone": "z2"
+        },
+        {
+          "date": "2026-12-16",
+          "kind": "run",
+          "type": "tempo",
+          "distance_m": 11000,
+          "blocks": [
+            {
+              "label": "warm-up",
+              "distance_m": 2000,
+              "zone": "z2"
+            },
+            {
+              "label": "drills",
+              "duration_s": 300
+            },
+            {
+              "label": "sub-threshold",
+              "reps": 5,
+              "pace_s_per_km": [
+                340,
+                355
+              ],
+              "recovery_s": 60,
+              "duration_s": 480
+            },
+            {
+              "label": "cool-down",
+              "zone": "z2"
+            }
+          ]
+        },
+        {
+          "date": "2026-12-16",
+          "kind": "lift",
+          "name": "Full-body B",
+          "after_run": true
+        },
+        {
+          "date": "2026-12-17",
+          "kind": "run",
+          "type": "easy",
+          "distance_m": 10000,
+          "zone": "z2",
+          "extras": [
+            {
+              "type": "strides",
+              "duration_s": 20
+            }
+          ]
+        },
+        {
+          "date": "2026-12-19",
+          "kind": "run",
+          "type": "long",
+          "distance_m": 19000,
+          "zone": "z2"
+        },
+        {
+          "date": "2026-12-19",
+          "kind": "lift",
+          "name": "Upper",
+          "after_run": true
+        }
+      ]
+    },
+    {
+      "index": 25,
+      "start": "2026-12-21",
+      "cutback": false,
+      "sessions": [
+        {
+          "date": "2026-12-21",
+          "kind": "lift",
+          "name": "Full-body A"
+        },
+        {
+          "date": "2026-12-22",
+          "kind": "run",
+          "type": "easy",
+          "distance_m": 10000,
+          "zone": "z2"
+        },
+        {
+          "date": "2026-12-23",
+          "kind": "run",
+          "type": "tempo",
+          "distance_m": 11000,
+          "blocks": [
+            {
+              "label": "warm-up",
+              "distance_m": 2000,
+              "zone": "z2"
+            },
+            {
+              "label": "drills",
+              "duration_s": 300
+            },
+            {
+              "label": "sub-threshold",
+              "reps": 4,
+              "pace_s_per_km": [
+                340,
+                355
+              ],
+              "recovery_s": 60,
+              "duration_s": 600
             },
             {
               "label": "cool-down",
@@ -846,7 +791,7 @@
           "date": "2026-12-24",
           "kind": "run",
           "type": "easy",
-          "distance_m": 8000,
+          "distance_m": 10000,
           "zone": "z2",
           "extras": [
             {
@@ -867,13 +812,6 @@
           "kind": "lift",
           "name": "Upper",
           "after_run": true
-        },
-        {
-          "date": "2026-12-27",
-          "kind": "run",
-          "type": "easy",
-          "distance_m": 7000,
-          "zone": "z2"
         }
       ]
     },
@@ -897,29 +835,14 @@
         {
           "date": "2026-12-30",
           "kind": "run",
-          "type": "race",
+          "type": "easy",
           "distance_m": 8000,
-          "blocks": [
+          "zone": "z2",
+          "extras": [
             {
-              "label": "warm-up",
-              "distance_m": 2000,
-              "zone": "z2"
-            },
-            {
-              "label": "drills"
-            },
-            {
-              "label": "strides",
-              "reps": 2
-            },
-            {
-              "label": "5K time trial",
-              "distance_m": 5000
-            },
-            {
-              "label": "cool-down",
-              "distance_m": 1000,
-              "zone": "z2"
+              "type": "strides",
+              "reps": 4,
+              "duration_s": 20
             }
           ]
         },

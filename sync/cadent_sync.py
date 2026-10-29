@@ -1,8 +1,10 @@
 """Pull recent Garmin runs and overnight wellness (HRV, sleep, resting HR) into Cadent's SQLite database."""
 
 import argparse
+import json
 import os
 import sqlite3
+import sys
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -108,12 +110,69 @@ def save_wellness(conn: sqlite3.Connection, rows: list[dict]) -> int:
     return len(rows)
 
 
+# Exit code for "no usable Garmin token": the app tells the user to connect Garmin in Settings.
+NOT_CONNECTED = 3
+
+# Saved beside Garmin's token on connect, with the account's name for Settings.
+ACCOUNT_FILE = "account.json"
+
+
+def tokens_dir() -> Path:
+    return Path(os.environ.get("GARMINTOKENS") or "~/.garminconnect").expanduser()
+
+
 def login():
+    """Signs in with the saved token only. The password is never stored, so there's nothing to fall back to."""
     from garminconnect import Garmin
 
-    garmin = Garmin(os.environ.get("GARMIN_EMAIL"), os.environ.get("GARMIN_PASSWORD"))
-    garmin.login(os.environ.get("GARMINTOKENS") or "~/.garminconnect")
+    garmin = Garmin()
+    garmin.login(str(tokens_dir()))
     return garmin
+
+
+def connect() -> None:
+    """Logs in once with the email and password the app writes to stdin, then saves only Garmin's token.
+
+    Talks to the app line by line on stdout: "mfa" asks for the code (read from the next stdin line),
+    then "connected", "bad-login" or "too-many"; any other failure is a non-zero exit with no line.
+    The password never touches argv, the environment, disk or a log.
+    """
+    from garminconnect import Garmin
+    from garminconnect.exceptions import (
+        GarminConnectAuthenticationError,
+        GarminConnectTooManyRequestsError,
+    )
+
+    def ask_mfa() -> str:
+        print("mfa", flush=True)
+        return sys.stdin.readline().strip()
+
+    tokens = tokens_dir()
+    try:
+        login_details = json.loads(sys.stdin.readline())
+        garmin = Garmin(login_details["email"], login_details["password"], prompt_mfa=ask_mfa)
+        # No token store here: a fresh login, not a reload of whatever token is already saved.
+        garmin.login()
+        garmin.client.dump(str(tokens))
+        # Written last: the app reads this file as "connected".
+        (tokens / ACCOUNT_FILE).write_text(json.dumps({"name": garmin.get_full_name()}))
+    except GarminConnectAuthenticationError:
+        print("bad-login", flush=True)
+        sys.exit(1)
+    except GarminConnectTooManyRequestsError:
+        print("too-many", flush=True)
+        sys.exit(1)
+    print("connected", flush=True)
+
+
+def disconnect() -> None:
+    """Deletes the saved token and account. Garmin's library names its own token file."""
+    from garminconnect.client.tokens import token_file_path
+
+    tokens = tokens_dir()
+    # Token first: if that fails, Settings still shows the account as connected, which it is.
+    token_file_path(str(tokens)).unlink(missing_ok=True)
+    (tokens / ACCOUNT_FILE).unlink(missing_ok=True)
 
 
 def fetch(garmin, days: int) -> list[dict]:
@@ -145,16 +204,45 @@ def main() -> None:
         default=WELLNESS_DAYS,
         help="how many nights back to sync wellness (the app's Sync button only needs the latest)",
     )
+    parser.add_argument(
+        "--connect",
+        action="store_true",
+        help="log in and save Garmin's token (used by the app's Settings; reads the login from stdin)",
+    )
+    parser.add_argument(
+        "--disconnect",
+        action="store_true",
+        help="delete the saved token (used by the app's Settings)",
+    )
     args = parser.parse_args()
+    if args.connect:
+        connect()
+        return
+    if args.disconnect:
+        disconnect()
+        return
 
     db_path = Path(os.environ.get("CADENT_DB") or REPO_ROOT / "data" / "cadent.db")
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    garmin = login()
+    from garminconnect.exceptions import GarminConnectAuthenticationError
+
+    account = tokens_dir() / ACCOUNT_FILE
     conn = sqlite3.connect(db_path)
-    # Runs first, so a failing wellness call never costs the runs.
-    count = save(conn, fetch(garmin, args.days))
-    nights = save_wellness(conn, fetch_wellness(garmin, args.wellness_days))
-    conn.close()
+    try:
+        garmin = login()
+        # Settings reads this file as "connected": keep it in step with whether the token works,
+        # including a token saved before Settings could connect.
+        if not account.exists():
+            account.write_text(json.dumps({"name": garmin.get_full_name()}))
+        # Runs first, so a failing wellness call never costs the runs.
+        count = save(conn, fetch(garmin, args.days))
+        nights = save_wellness(conn, fetch_wellness(garmin, args.wellness_days))
+    except GarminConnectAuthenticationError as error:
+        account.unlink(missing_ok=True)
+        print(f"Garmin isn't connected (connect it in Settings): {error}", file=sys.stderr)
+        sys.exit(NOT_CONNECTED)
+    finally:
+        conn.close()
     print(
         f"Synced {count} runs from the last {args.days} days and {nights} days of wellness to {db_path}"
     )
