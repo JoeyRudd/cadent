@@ -1,10 +1,7 @@
 // Overnight wellness Garmin recorded (HRV, sleep, resting HR), read from the SQLite file the
 // Python sync script writes. A missing file or table means nothing has synced yet.
 
-import { existsSync } from "node:fs";
-import { DatabaseSync } from "node:sqlite";
-
-import { dbPath } from "./activities";
+import { dbPath, readTable } from "./activities";
 import { addDays } from "./week";
 
 const STATUSES = ["BALANCED", "UNBALANCED", "LOW", "POOR"] as const;
@@ -37,21 +34,17 @@ export type Readiness = {
 
 /** Wellness dated `from` to `to`, inclusive. */
 export function wellnessBetween(from: string, to: string, file = dbPath()): Wellness[] {
-  // The database lives outside the build; don't let Turbopack trace the whole project for it.
-  if (!existsSync(/*turbopackIgnore: true*/ file)) return [];
-  // timeout: wait out the sync's brief write lock instead of failing the page.
-  const db = new DatabaseSync(file, { readOnly: true, timeout: 5000 });
-  try {
-    const table = db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'wellness'").get();
-    if (!table) return [];
-    return db
-      .prepare(
-        "SELECT date, hrv_ms, hrv_week_ms, hrv_status, sleep_s, rhr FROM wellness WHERE date BETWEEN ? AND ? ORDER BY date",
-      )
-      .all(from, to) as Wellness[];
-  } finally {
-    db.close();
-  }
+  return readTable(
+    "wellness",
+    [],
+    (db) =>
+      db
+        .prepare(
+          "SELECT date, hrv_ms, hrv_week_ms, hrv_status, sleep_s, rhr FROM wellness WHERE date BETWEEN ? AND ? ORDER BY date",
+        )
+        .all(from, to) as Wellness[],
+    file,
+  );
 }
 
 /** Rounded mean of the numbers present, or null if there are none. */

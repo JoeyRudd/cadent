@@ -52,6 +52,13 @@ export function hoursMinutes(seconds: number): string {
   return pace(Math.round(seconds / 60));
 }
 
+/** 2480 → "41:20", 3725 → "1:02:05" (a run's time). */
+export function clock(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const rest = pace(seconds % 3600);
+  return hours > 0 ? `${hours}:${rest.padStart(5, "0")}` : rest;
+}
+
 /** "z2" → "Zone 2". */
 export function zoneLabel(zone: string): string {
   return `Zone ${zone.replace(/^z/, "")}`;
@@ -63,6 +70,16 @@ export function zoneLabel(zone: string): string {
 export function dayLabel(day: string): string {
   return new Intl.DateTimeFormat("en-US", {
     weekday: "long",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(day));
+}
+
+/** "2026-10-27" → "Tue, Oct 27". */
+export function shortDayLabel(day: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "short",
     month: "short",
     day: "numeric",
     timeZone: "UTC",
