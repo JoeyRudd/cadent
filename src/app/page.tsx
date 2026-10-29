@@ -1,12 +1,14 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
 
+import { Readiness } from "@/components/Readiness";
 import { RunCard } from "@/components/RunCard";
 import { WeekStrip } from "@/components/WeekStrip";
 import { activitiesBetween } from "@/lib/activities";
 import { dayLabel, km, runTypeLabel, weekday } from "@/lib/format";
 import { localDate, nextRun, plan, sessionsOn, type Lift, type Run } from "@/lib/plan";
-import { weekBounds, weekOf } from "@/lib/week";
+import { addDays, weekBounds, weekOf } from "@/lib/week";
+import { readinessOn, wellnessBetween } from "@/lib/wellness";
 
 export default function Home() {
   return (
@@ -25,6 +27,7 @@ async function Today() {
   const sessions = sessionsOn(plan, day);
   const lift = sessions.find((s): s is Lift => s.kind === "lift");
   const week = thisWeek(day);
+  const readiness = lastNight(day);
 
   return (
     <>
@@ -56,6 +59,7 @@ async function Today() {
 
       <div className="mt-4 space-y-4">
         <Hero day={day} run={sessions.find((s): s is Run => s.kind === "run")} week={week?.index} />
+        {readiness && <Readiness readiness={readiness} />}
         {week && <WeekStrip week={week} today={day} />}
         {lift && (
           <section className="rounded-card border border-line bg-surface p-4">
@@ -76,6 +80,16 @@ function thisWeek(day: string) {
     return weekOf(plan, activitiesBetween(bounds.start, bounds.end), day);
   } catch (error) {
     console.error("Couldn't read activities", error);
+    return undefined;
+  }
+}
+
+/** Last night's wellness against the week before. A database error hides the card. */
+function lastNight(day: string) {
+  try {
+    return readinessOn(wellnessBetween(addDays(day, -7), day), day);
+  } catch (error) {
+    console.error("Couldn't read wellness", error);
     return undefined;
   }
 }
