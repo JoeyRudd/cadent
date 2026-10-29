@@ -51,7 +51,7 @@ export function RunCard({ run, zones, week }: { run: Run; zones: Plan["zones"]; 
       )}
 
       <Link
-        href="/week"
+        href={`/run/${run.date}`}
         className="flex h-12 items-center justify-center rounded-button bg-accent text-base font-semibold text-on-accent"
       >
         See session details

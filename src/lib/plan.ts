@@ -55,6 +55,12 @@ export function localDate(now: Date): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE }).format(now);
 }
 
+/** A real calendar day as "YYYY-MM-DD": not "2026-13-45", and not "2026-02-30", which Date rolls over to March 2. */
+export function isDay(value: string): boolean {
+  const date = new Date(value);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
 function allSessions(plan: Plan): Session[] {
   return plan.weeks.flatMap((week) => week.sessions);
 }

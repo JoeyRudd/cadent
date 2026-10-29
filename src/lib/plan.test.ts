@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { localDate, nextRun, sessionsOn, type Plan } from "./plan";
+import { isDay, localDate, nextRun, sessionsOn, type Plan } from "./plan";
 
 // A two-week plan, so editing data/plan.json never breaks these tests.
 const plan: Plan = {
@@ -28,6 +28,16 @@ const plan: Plan = {
     },
   ],
 };
+
+describe("isDay", () => {
+  it("accepts only real calendar days", () => {
+    expect(isDay("2026-10-27")).toBe(true);
+    expect(isDay("2028-02-29")).toBe(true);
+    for (const bad of ["2026-13-45", "2026-02-30", "2026-10-7", "garbage", "2026-10-27x"]) {
+      expect(isDay(bad)).toBe(false);
+    }
+  });
+});
 
 describe("localDate", () => {
   it("uses Toronto's date, not UTC's", () => {
