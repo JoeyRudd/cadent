@@ -26,8 +26,9 @@ this file records the rules they encode.
 | `warning` | `#A3412D` | `#E8836C` | Safety rules only |
 | `rounded-card` / `rounded-button` | 20px / 14px | | Shapes |
 
-Font: Figtree via `next/font` (self-hosted at build), tabular figures on every number. Dark values
-apply under `prefers-color-scheme: dark`. Every text/background token pair the app uses meets
+Font: Figtree via `next/font` (self-hosted at build), tabular figures on every number. Each colour
+token is `light-dark(light, dark)`: dark values follow the device, unless Settings → Appearance
+picks Light or Dark. Every text/background token pair the app uses meets
 WCAG AA (4.5:1) in both modes; fading text with `opacity` can break that. `line` is for
 decorative borders only (about 1.3:1 on `surface`), so never let a border alone carry meaning.
 

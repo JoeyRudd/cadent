@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
@@ -36,8 +37,8 @@ async function Today() {
           <p className="text-sm text-muted">{dayLabel(day)}</p>
           <h1 className="mt-0.5 text-2xl font-bold">Good morning, Joey</h1>
         </div>
-        <button
-          type="button"
+        <Link
+          href="/settings"
           aria-label="Settings"
           className="flex size-11 items-center justify-center rounded-full border border-line bg-surface text-ink"
         >
@@ -54,7 +55,7 @@ async function Today() {
             <circle cx="16" cy="7" r="2" />
             <circle cx="10" cy="17" r="2" />
           </svg>
-        </button>
+        </Link>
       </header>
 
       <div className="mt-4 space-y-4">

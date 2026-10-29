@@ -12,3 +12,4 @@ One line per choice that isn't obvious. Newest last.
 - **Sync runs inside the app container, scheduled by host cron.** One image (Node + uv) and a `docker compose exec` cron line; no scheduler process to keep alive.
 - **Sync hourly from 6am to noon.** The watch uploads overnight data whenever the phone next syncs, so one 6am run often missed it. Each run is a full sync (about 25 Garmin requests); a wellness-only flag would save just the one activities request, and the full run also picks up a morning run.
 - **Container clock is America/Toronto.** `TZ` in `docker-compose.yml` matches `TIME_ZONE` in `src/lib/plan.ts`, so the sync's `date.today()` is the app's today.
+- **Appearance choice lives in the browser (localStorage), not a cookie.** A cookie read in the root layout would make every page dynamic under Cache Components; an inline script sets `data-theme` before paint instead. It is per device, which suits one user with one phone.

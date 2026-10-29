@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Figtree } from "next/font/google";
 import { TabBar } from "@/components/TabBar";
+import { APPLY_SAVED_THEME, BAR_COLORS } from "@/lib/theme";
 import "./globals.css";
 
 const figtree = Figtree({
@@ -15,14 +16,18 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f4f5ef" },
-    { media: "(prefers-color-scheme: dark)", color: "#141a17" },
+    { media: "(prefers-color-scheme: light)", color: BAR_COLORS.light },
+    { media: "(prefers-color-scheme: dark)", color: BAR_COLORS.dark },
   ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${figtree.variable} h-full antialiased`}>
+    // suppressHydrationWarning: the inline script may set data-theme before React hydrates.
+    <html lang="en" className={`${figtree.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: APPLY_SAVED_THEME }} />
+      </head>
       <body className="min-h-full pb-20">
         {children}
         <TabBar />
