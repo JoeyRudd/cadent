@@ -3,10 +3,10 @@
 
 import { describe, expect, it } from "vitest";
 
-import type { Run, RunType } from "./plan";
-import { LONG_RUN_SPIKE, MAX_RATIO, MIN_RUN, WINDOW_DAYS, validate } from "./rules";
+import type { Lift, Run, RunType, Session } from "./plan";
+import { LONG_AFTER_FULL_BODY, LONG_RUN_SPIKE, MAX_RATIO, MIN_RUN, REST_DAY, WINDOW_DAYS, validate } from "./rules";
 
-const DAY0 = "2026-10-12";
+const DAY0 = "2026-10-12"; // a Monday
 
 /** DAY0 plus `offset` days, as "YYYY-MM-DD". */
 function dayAt(offset: number): string {
@@ -19,7 +19,11 @@ function run(day: number, km: number, type: RunType = "easy"): Run {
   return { date: dayAt(day), kind: "run", type, distance_m: Math.round(km * 1000) };
 }
 
-function codes(runs: Run[], history: Run[] = []): string[] {
+function lift(day: number, name: string): Lift {
+  return { date: dayAt(day), kind: "lift", name };
+}
+
+function codes(runs: Session[], history: Run[] = []): string[] {
   return validate(runs, history).map((f) => f.code);
 }
 
@@ -77,6 +81,49 @@ describe("MIN_RUN: no run under 5 km, except a race-week shakeout", () => {
 
   it("exempts a shakeout from the minimum", () => {
     expect(codes([run(0, 3, "shakeout")])).toEqual([]);
+  });
+});
+
+describe("REST_DAY: every week keeps one day with no run and no lift", () => {
+  // Mon lift, Tue-Thu runs, Sat long run, Sun easy: Friday is the rest day.
+  const WEEK: Session[] = [lift(0, "Full-body A"), run(1, 8), run(2, 8), run(3, 7), run(5, 15, "long"), run(6, 5)];
+  const history = [run(-7, 14, "long")];
+
+  it("passes a week with a free day", () => {
+    expect(codes(WEEK, history)).not.toContain(REST_DAY);
+  });
+
+  it("warns on the Monday of a week with a session every day", () => {
+    const findings = validate([...WEEK, lift(4, "Upper")], history).filter((f) => f.code === REST_DAY);
+    expect(findings.map((f) => [f.day, f.severity])).toEqual([[DAY0, "warning"]]);
+  });
+
+  it("counts a lift alone as using the day", () => {
+    expect(codes([...WEEK, lift(4, "Mobility")], history)).toContain(REST_DAY);
+  });
+
+  it("checks Monday-to-Sunday weeks, not any seven days in a row", () => {
+    const sevenInARow = [2, 3, 4, 5, 6, 7, 8].map((d) => run(d, 6));
+    expect(codes(sevenInARow)).not.toContain(REST_DAY);
+  });
+});
+
+describe("LONG_AFTER_FULL_BODY: no full-body lift the day before a long run", () => {
+  const history = [run(-7, 14, "long")];
+
+  it("warns on the long run's day", () => {
+    const findings = validate([lift(4, "Full-body B"), run(5, 15, "long")], history);
+    expect(findings.map((f) => [f.code, f.day, f.severity])).toEqual([[LONG_AFTER_FULL_BODY, dayAt(5), "warning"]]);
+  });
+
+  it("allows other lifts, a full-body lift on the same day, or one two days before", () => {
+    expect(codes([lift(4, "Upper"), run(5, 15, "long")], history)).toEqual([]);
+    expect(codes([lift(5, "Full-body A"), run(5, 15, "long")], history)).toEqual([]);
+    expect(codes([lift(3, "Full-body A"), run(5, 15, "long")], history)).toEqual([]);
+  });
+
+  it("does not check other runs", () => {
+    expect(codes([lift(4, "Full-body A"), run(5, 8)])).toEqual([]);
   });
 });
 

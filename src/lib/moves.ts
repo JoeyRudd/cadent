@@ -6,7 +6,8 @@ import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
 import { dbPath, readTable } from "./activities";
-import { isDay, plan, sessionsOn, type Plan, type Run } from "./plan";
+import { allSessions, isDay, plan, sessionsOn, type Plan } from "./plan";
+import { LONG_AFTER_FULL_BODY, REST_DAY, validate } from "./rules";
 import { addDays, weekBounds } from "./week";
 
 /** Planned date → the day the run now happens on. Keyed by the plan's date, so moving twice replaces the move. */
@@ -63,22 +64,15 @@ export function moveError(moved: Plan, from: string, to: string): string | undef
   if (hasRun(moved, to)) return "That day already has a run.";
 }
 
-/** Gentle notes on the run's week as it now stands, from the plan's rest-day rules. */
+const REST_RULES = new Set([REST_DAY, LONG_AFTER_FULL_BODY]);
+
+/** The rest-day findings for `day`'s week of the moved plan: gentle notes after a move. */
 export function moveWarnings(moved: Plan, day: string): string[] {
   const week = weekBounds(moved, day);
   if (!week) return [];
-  const days = Array.from({ length: 7 }, (_, i) => addDays(week.start, i));
-  const warnings: string[] = [];
-  if (days.every((d) => sessionsOn(moved, d).length > 0)) {
-    warnings.push("No full rest day this week. Keep one day free of running and lifting.");
-  }
-  const longRun = days
-    .flatMap((d) => sessionsOn(moved, d))
-    .find((s): s is Run => s.kind === "run" && s.type === "long");
-  if (longRun && sessionsOn(moved, addDays(longRun.date, -1)).some((s) => s.kind === "lift" && s.name.startsWith("Full-body"))) {
-    warnings.push("The long run is the day after a full-body lift. The plan keeps those apart.");
-  }
-  return warnings;
+  return validate(allSessions(moved), [])
+    .filter((f) => REST_RULES.has(f.code) && week.start <= f.day && f.day <= week.end)
+    .map((f) => f.message);
 }
 
 /** plan.json with the saved moves applied: what the pages show. A database error shows the plan as written. */
