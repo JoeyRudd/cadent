@@ -30,6 +30,8 @@ export type Run = {
   pace_s_per_km?: number | [number, number];
   extras?: Extra[];
   blocks?: Block[];
+  /** Set by withMoves (moves.ts) on a run moved off the day the plan gave it. */
+  planned_date?: string;
 };
 
 export type Lift = {

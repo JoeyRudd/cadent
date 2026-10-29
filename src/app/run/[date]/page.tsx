@@ -4,13 +4,16 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 
 import { CheckIn } from "@/components/CheckIn";
+import { MoveRun } from "@/components/MoveRun";
 import { activitiesBetween } from "@/lib/activities";
 import { clock, km, pace, paceTarget, runTypeLabel, shortDayLabel, zoneLabel } from "@/lib/format";
 import { checkInOn } from "@/lib/checkins";
-import { isDay, localDate, plan } from "@/lib/plan";
+import { currentPlan, moveError, moveWarnings } from "@/lib/moves";
+import { isDay, localDate, type Plan } from "@/lib/plan";
 import { runDetail, type RunDetail } from "@/lib/run";
+import { weekOf } from "@/lib/week";
 
-import { saveCheckInFor } from "./actions";
+import { moveRunFor, saveCheckInFor } from "./actions";
 
 export default function RunPage({ params }: PageProps<"/run/[date]">) {
   return (
@@ -36,7 +39,8 @@ async function Detail({ params }: { params: Promise<{ date: string }> }) {
   if (!isDay(date)) notFound();
   await connection();
   const today = localDate(new Date());
-  const detail = runDetail(plan, dayActivities(date), date, today);
+  const moved = currentPlan();
+  const detail = runDetail(moved, dayActivities(date), date, today);
   const { run, planned_m, recorded, status, zone, hr } = detail;
   // From the distances as shown, so "5.2 km" against "5.0" always reads "+0.2".
   const gap = run && recorded ? Number(km(recorded.distance_m)) - Number(km(planned_m)) : 0;
@@ -112,6 +116,16 @@ async function Detail({ params }: { params: Promise<{ date: string }> }) {
           </div>
         )}
 
+        {/* A recorded run stays put, unless it was moved there: then it can still go back. */}
+        {run && (!recorded || run.planned_date) && (
+          <MoveRun
+            action={moveRunFor.bind(null, date)}
+            days={weekDays(moved, date)}
+            current={date}
+            plannedOn={run.planned_date}
+            warnings={moveWarnings(moved, date)}
+          />
+        )}
         {recorded && <CheckIn key={date} action={saveCheckInFor.bind(null, date)} saved={savedCheckIn(date)} />}
       </div>
     </>
@@ -126,6 +140,11 @@ function dayActivities(date: string) {
     console.error("Couldn't read activities", error);
     return [];
   }
+}
+
+/** Monday to Sunday of the run's week; a day is free when the run on `date` could move there. */
+function weekDays(moved: Plan, date: string) {
+  return (weekOf(moved, [], date)?.days ?? []).map((day) => ({ date: day.date, free: !moveError(moved, date, day.date) }));
 }
 
 /** The check-in already saved for the day. A database error shows an empty form rather than failing the page. */

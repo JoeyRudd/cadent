@@ -4,7 +4,8 @@ import { Suspense } from "react";
 import { WeekDayRow } from "@/components/WeekDayRow";
 import { activitiesBetween } from "@/lib/activities";
 import { km } from "@/lib/format";
-import { localDate, plan } from "@/lib/plan";
+import { currentPlan } from "@/lib/moves";
+import { localDate } from "@/lib/plan";
 import { weekBounds, weekOf } from "@/lib/week";
 
 export default function WeekPage() {
@@ -28,6 +29,7 @@ function shortDate(day: string): string {
 async function ThisWeek() {
   await connection();
   const today = localDate(new Date());
+  const plan = currentPlan();
   const bounds = weekBounds(plan, today);
   const week = bounds && weekOf(plan, activitiesBetween(bounds.start, bounds.end), today);
 
