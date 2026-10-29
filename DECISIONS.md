@@ -9,4 +9,6 @@ One line per choice that isn't obvious. Newest last.
 - **Hosted at home behind Tailscale.** Private HTTPS to my phone, nothing exposed to the internet, so no login.
 - **Plan is a JSON file.** Edit `data/plan.json` and redeploy; no import screen until someone else uses the app.
 - **Runs record moving time.** The sync stores Garmin's moving duration (elapsed only if moving is missing), so stops at lights don't slow the pace.
-- **Sync runs inside the app container, scheduled by host cron.** One image (Node + uv) and a `docker compose exec` line at 6am; no scheduler process to keep alive.
+- **Sync runs inside the app container, scheduled by host cron.** One image (Node + uv) and a `docker compose exec` cron line; no scheduler process to keep alive.
+- **Sync hourly from 6am to noon.** The watch uploads overnight data whenever the phone next syncs, so one 6am run often missed it. Each run is a full sync (about 25 Garmin requests); a wellness-only flag would save just the one activities request, and the full run also picks up a morning run.
+- **Container clock is America/Toronto.** `TZ` in `docker-compose.yml` matches `TIME_ZONE` in `src/lib/plan.ts`, so the sync's `date.today()` is the app's today.
