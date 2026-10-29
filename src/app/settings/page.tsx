@@ -1,16 +1,13 @@
 import Link from "next/link";
 
 import { AppearancePicker } from "@/components/AppearancePicker";
+import { ICON_BUTTON } from "@/components/iconButton";
 
 export default function Settings() {
   return (
     <main className="mx-auto max-w-md px-5 py-7">
       <header className="flex items-center gap-3">
-        <Link
-          href="/"
-          aria-label="Back to Today"
-          className="flex size-11 items-center justify-center rounded-full border border-line bg-surface text-ink"
-        >
+        <Link href="/" aria-label="Back to Today" className={ICON_BUTTON}>
           <svg
             aria-hidden="true"
             className="size-5"

@@ -4,7 +4,9 @@ import { Suspense } from "react";
 
 import { Readiness } from "@/components/Readiness";
 import { RunCard } from "@/components/RunCard";
+import { SyncButton } from "@/components/SyncButton";
 import { WeekStrip } from "@/components/WeekStrip";
+import { ICON_BUTTON } from "@/components/iconButton";
 import { activitiesBetween } from "@/lib/activities";
 import { dayLabel, km, runTypeLabel, weekday } from "@/lib/format";
 import { localDate, nextRun, plan, sessionsOn, type Lift, type Run } from "@/lib/plan";
@@ -37,25 +39,24 @@ async function Today() {
           <p className="text-sm text-muted">{dayLabel(day)}</p>
           <h1 className="mt-0.5 text-2xl font-bold">Good morning, Joey</h1>
         </div>
-        <Link
-          href="/settings"
-          aria-label="Settings"
-          className="flex size-11 items-center justify-center rounded-full border border-line bg-surface text-ink"
-        >
-          <svg
-            aria-hidden="true"
-            className="size-5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          >
-            <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
-            <circle cx="16" cy="7" r="2" />
-            <circle cx="10" cy="17" r="2" />
-          </svg>
-        </Link>
+        <div className="flex gap-2">
+          <SyncButton />
+          <Link href="/settings" aria-label="Settings" className={ICON_BUTTON}>
+            <svg
+              aria-hidden="true"
+              className="size-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            >
+              <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
+              <circle cx="16" cy="7" r="2" />
+              <circle cx="10" cy="17" r="2" />
+            </svg>
+          </Link>
+        </div>
       </header>
 
       <div className="mt-4 space-y-4">
