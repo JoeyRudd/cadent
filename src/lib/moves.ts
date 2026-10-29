@@ -63,6 +63,13 @@ export function moveError(moved: Plan, from: string, to: string): string | undef
   if (hasRun(moved, to)) return "That day already has a run.";
 }
 
+/** The days of its week the run now on `from` can move to, by moveError's rules. */
+export function moveTargets(moved: Plan, from: string): string[] {
+  const week = weekBounds(moved, from);
+  if (!week) return [];
+  return Array.from({ length: 7 }, (_, i) => addDays(week.start, i)).filter((to) => !moveError(moved, from, to));
+}
+
 /** Gentle notes on the run's week as it now stands, from the plan's rest-day rules. */
 export function moveWarnings(moved: Plan, day: string): string[] {
   const week = weekBounds(moved, day);

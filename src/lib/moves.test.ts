@@ -4,7 +4,7 @@ import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 
 import type { Activity } from "./activities";
-import { moveError, moveWarnings, saveMove, savedMoves, withMoves } from "./moves";
+import { moveError, moveTargets, moveWarnings, saveMove, savedMoves, withMoves } from "./moves";
 import { sessionsOn, type Plan, type Session } from "./plan";
 import { weekOf } from "./week";
 
@@ -79,6 +79,17 @@ describe("moveError", () => {
     expect(moveError(PLAN, "2026-10-27", "not-a-day")).toMatch(/this week/);
     expect(moveError(PLAN, "2026-10-27", "2026-10-29")).toMatch(/already has a run/);
     expect(moveError(PLAN, "2026-10-30", "2026-10-26")).toMatch(/no run/);
+  });
+});
+
+describe("moveTargets", () => {
+  it("is the days of the week without a run", () => {
+    expect(moveTargets(PLAN, "2026-10-27")).toEqual(["2026-10-26", "2026-10-30"]);
+  });
+
+  it("is empty for a day with no run or outside the plan", () => {
+    expect(moveTargets(PLAN, "2026-10-30")).toEqual([]);
+    expect(moveTargets(PLAN, "2026-11-02")).toEqual([]);
   });
 });
 
