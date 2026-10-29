@@ -18,13 +18,17 @@ export type Block = {
   zone?: string;
 };
 
+export type Extra = { type: string; reps?: number | [number, number]; duration_s: number };
+
 export type Run = {
   date: string;
   kind: "run";
   type: RunType;
   distance_m: number;
   zone?: string;
-  extras?: { type: string; reps?: number; duration_s: number }[];
+  /** Target pace: a single value (shown as "~6:45 /km") or a [fast, slow] range. */
+  pace_s_per_km?: number | [number, number];
+  extras?: Extra[];
   blocks?: Block[];
 };
 
