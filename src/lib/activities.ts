@@ -19,21 +19,31 @@ export function dbPath(): string {
   return process.env.CADENT_DB || path.join(process.cwd(), "data", "cadent.db");
 }
 
-/** Activities dated `from` to `to`, inclusive. */
-export function activitiesBetween(from: string, to: string, file = dbPath()): Activity[] {
+/** `read` against the database, or `fallback` while the file or `table` doesn't exist yet. */
+export function readTable<T>(table: string, fallback: T, read: (db: DatabaseSync) => T, file = dbPath()): T {
   // The database lives outside the build; don't let Turbopack trace the whole project for it.
-  if (!existsSync(/*turbopackIgnore: true*/ file)) return [];
+  if (!existsSync(/*turbopackIgnore: true*/ file)) return fallback;
   // timeout: wait out the sync's brief write lock instead of failing the page.
   const db = new DatabaseSync(file, { readOnly: true, timeout: 5000 });
   try {
-    const table = db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'activities'").get();
-    if (!table) return [];
-    return db
-      .prepare(
-        "SELECT id, date, type, distance_m, duration_s, avg_hr FROM activities WHERE date BETWEEN ? AND ? ORDER BY date",
-      )
-      .all(from, to) as Activity[];
+    const exists = db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?").get(table);
+    return exists ? read(db) : fallback;
   } finally {
     db.close();
   }
+}
+
+/** Activities dated `from` to `to`, inclusive. */
+export function activitiesBetween(from: string, to: string, file = dbPath()): Activity[] {
+  return readTable(
+    "activities",
+    [],
+    (db) =>
+      db
+        .prepare(
+          "SELECT id, date, type, distance_m, duration_s, avg_hr FROM activities WHERE date BETWEEN ? AND ? ORDER BY date",
+        )
+        .all(from, to) as Activity[],
+    file,
+  );
 }

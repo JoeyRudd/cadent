@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Suspense } from "react";
 
 const TABS = [
   { href: "/", label: "Today" },
@@ -10,9 +11,21 @@ const TABS = [
 ];
 
 // Fixed bottom tabs, thumb-reachable on a phone. Client-side only to read the current path.
+// The path isn't known while prerendering a route like /run/[date], so the bar renders without
+// a highlighted tab until it streams in.
 export function TabBar() {
-  const pathname = usePathname();
+  return (
+    <Suspense fallback={<Tabs />}>
+      <ActiveTabs />
+    </Suspense>
+  );
+}
 
+function ActiveTabs() {
+  return <Tabs pathname={usePathname()} />;
+}
+
+function Tabs({ pathname }: { pathname?: string }) {
   return (
     <nav className="fixed inset-x-0 bottom-0 border-t border-line bg-surface">
       <ul className="mx-auto flex max-w-md">

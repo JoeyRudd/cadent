@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { blockLabel, dayLabel, duration, hoursMinutes, km, pace, weekday, zoneLabel } from "./format";
+import {
+  blockLabel,
+  clock,
+  dayLabel,
+  duration,
+  hoursMinutes,
+  km,
+  pace,
+  shortDayLabel,
+  weekday,
+  zoneLabel,
+} from "./format";
 
 describe("units", () => {
   it("formats distance, pace and duration", () => {
@@ -13,11 +24,14 @@ describe("units", () => {
     expect(duration(90)).toBe("1 min 30 s");
     expect(hoursMinutes(26400)).toBe("7:20");
     expect(hoursMinutes(25530)).toBe("7:06");
+    expect(clock(2480)).toBe("41:20");
+    expect(clock(3725)).toBe("1:02:05");
     expect(zoneLabel("z2")).toBe("Zone 2");
   });
 
   it("formats plan dates without shifting the day", () => {
     expect(dayLabel("2026-10-27")).toBe("Tuesday, Oct 27");
+    expect(shortDayLabel("2026-10-27")).toBe("Tue, Oct 27");
     expect(weekday("2026-10-28")).toBe("Wed");
   });
 });

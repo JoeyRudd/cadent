@@ -34,7 +34,7 @@ export function addDays(day: string, n: number): string {
 }
 
 /** Garmin types: "running", "treadmill_running", "trail_running", … */
-function isRun(activity: Activity): boolean {
+export function isRun(activity: Activity): boolean {
   return activity.type.includes("running");
 }
 
