@@ -1,7 +1,21 @@
+import io
+import json
 import sqlite3
 from datetime import date, timedelta
+from pathlib import Path
 
-from cadent_sync import fetch_wellness, is_run, save, save_wellness, to_row, to_wellness_row
+import pytest
+
+from cadent_sync import (
+    NOT_CONNECTED,
+    fetch_wellness,
+    is_run,
+    main,
+    save,
+    save_wellness,
+    to_row,
+    to_wellness_row,
+)
 
 
 def activity(**overrides) -> dict:
@@ -114,3 +128,94 @@ def test_fetch_wellness_covers_today_and_the_days_before():
     today = date.today()
     rows = fetch_wellness(FakeGarmin(), 7)
     assert [r["date"] for r in rows] == [(today - timedelta(days=n)).isoformat() for n in range(8)]
+
+
+def run_main(monkeypatch, tmp_path, *args: str, stdin: str = "") -> int:
+    monkeypatch.setenv("GARMINTOKENS", str(tmp_path / "tokens"))
+    monkeypatch.setenv("CADENT_DB", str(tmp_path / "cadent.db"))
+    monkeypatch.setattr("sys.argv", ["cadent_sync.py", *args])
+    monkeypatch.setattr("sys.stdin", io.StringIO(stdin))
+    try:
+        main()
+    except SystemExit as exit:
+        return exit.code
+    return 0
+
+
+def test_sync_without_a_token_exits_not_connected(monkeypatch, tmp_path):
+    assert run_main(monkeypatch, tmp_path) == NOT_CONNECTED
+
+
+class FakeConnectGarmin:
+    def __init__(self, email=None, password=None, prompt_mfa=None):
+        self.password, self.prompt_mfa = password, prompt_mfa
+        self.client = self
+
+    def login(self, tokenstore=None):
+        from garminconnect.exceptions import GarminConnectAuthenticationError
+
+        if self.prompt_mfa() != "123456" or self.password != "right":
+            raise GarminConnectAuthenticationError("401")
+
+    def dump(self, path):
+        Path(path).mkdir(parents=True)
+        (Path(path) / "garmin_tokens.json").write_text("{}")
+
+    def get_full_name(self):
+        return "Joey Rudd"
+
+
+@pytest.mark.parametrize(
+    ("password", "code", "reply"),
+    [("right", 0, "connected"), ("wrong", 1, "bad-login")],
+)
+def test_connect_saves_the_token_but_never_the_password(
+    monkeypatch, tmp_path, capsys, password, code, reply
+):
+    monkeypatch.setattr("garminconnect.Garmin", FakeConnectGarmin)
+    login = json.dumps({"email": "joey@example.com", "password": password}) + "\n123456\n"
+    assert run_main(monkeypatch, tmp_path, "--connect", stdin=login) == code
+    assert capsys.readouterr().out.split() == ["mfa", reply]
+    tokens = tmp_path / "tokens"
+    saved = "".join(p.read_text() for p in tokens.iterdir()) if tokens.exists() else ""
+    assert password not in saved
+    assert ("Joey Rudd" in saved) == (reply == "connected")
+
+
+def test_disconnect_deletes_the_token_and_account(monkeypatch, tmp_path):
+    monkeypatch.setattr("garminconnect.Garmin", FakeConnectGarmin)
+    login = '{"email": "joey@example.com", "password": "right"}\n123456\n'
+    run_main(monkeypatch, tmp_path, "--connect", stdin=login)
+    assert run_main(monkeypatch, tmp_path, "--disconnect") == 0
+    assert list((tmp_path / "tokens").iterdir()) == []
+
+
+class FakeSyncGarmin:
+    def login(self, tokenstore=None):
+        pass
+
+    def get_full_name(self):
+        return "Joey Rudd"
+
+    def get_activities_by_date(self, start, end):
+        from garminconnect.exceptions import GarminConnectAuthenticationError
+
+        raise GarminConnectAuthenticationError("token rejected")
+
+
+def test_sync_marks_a_hand_saved_token_connected_and_clears_it_once_garmin_rejects_it(
+    monkeypatch, tmp_path
+):
+    monkeypatch.setattr("garminconnect.Garmin", FakeSyncGarmin)
+    seen = []
+    monkeypatch.setattr(
+        "cadent_sync.fetch",
+        lambda garmin, days: (
+            seen.append((tmp_path / "tokens" / "account.json").exists())
+            or garmin.get_activities_by_date("", "")
+        ),
+    )
+    (tmp_path / "tokens").mkdir()
+    assert run_main(monkeypatch, tmp_path) == NOT_CONNECTED
+    assert seen == [True]
+    assert not (tmp_path / "tokens" / "account.json").exists()

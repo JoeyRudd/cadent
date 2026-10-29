@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { PRIMARY_BUTTON } from "@/components/iconButton";
 import { blockLabel, extraLabel, km, paceTarget, runTypeLabel, zoneLabel } from "@/lib/format";
 import type { Plan, Run } from "@/lib/plan";
 
@@ -52,7 +53,7 @@ export function RunCard({ run, zones, week }: { run: Run; zones: Plan["zones"]; 
 
       <Link
         href={`/run/${run.date}`}
-        className="flex h-12 items-center justify-center rounded-button bg-accent text-base font-semibold text-on-accent"
+        className={`flex items-center justify-center ${PRIMARY_BUTTON}`}
       >
         See session details
       </Link>

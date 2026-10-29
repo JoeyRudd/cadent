@@ -2,7 +2,8 @@ services:
   cadent:
     build: .
     ports:
-      - "3000:3000"
+      # Localhost only: phones reach it through `tailscale serve`, whose identity header guards Settings › Garmin.
+      - "127.0.0.1:3000:3000"
     volumes:
       - cadent-data:/app/data
     environment:
@@ -10,8 +11,7 @@ services:
       TZ: America/Toronto
       CADENT_DB: ${CADENT_DB:-/app/data/cadent.db}
       GARMINTOKENS: ${GARMINTOKENS:-/app/data/garmin-tokens}
-      GARMIN_EMAIL: ${GARMIN_EMAIL:-}
-      GARMIN_PASSWORD: ${GARMIN_PASSWORD:-}
+      CADENT_OWNER: ${CADENT_OWNER:-}
     restart: unless-stopped
 
 volumes:

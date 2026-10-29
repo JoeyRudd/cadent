@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 
+import { PRIMARY_BUTTON } from "@/components/iconButton";
 import type { CheckIn as Saved, CheckInState } from "@/lib/checkins";
 
 const EFFORTS = Array.from({ length: 10 }, (_, i) => i + 1);
@@ -77,7 +78,7 @@ export function CheckIn({
       <button
         type="submit"
         disabled={effort === undefined || pain === undefined || pending || unchanged}
-        className="h-12 rounded-button bg-accent text-base font-semibold text-on-accent disabled:opacity-50"
+        className={PRIMARY_BUTTON}
       >
         {pending ? "Saving…" : unchanged ? "Saved" : "Save check-in"}
       </button>

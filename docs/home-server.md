@@ -11,7 +11,7 @@ nothing is exposed to the internet.
 
    ```bash
    git clone https://github.com/JoeyRudd/cadent.git && cd cadent
-   cp .env.example .env   # fill in GARMIN_EMAIL and GARMIN_PASSWORD
+   cp .env.example .env   # set CADENT_OWNER to your Tailscale login
    ```
 
    Leave `CADENT_DB` and `GARMINTOKENS` empty: they default to `/app/data/cadent.db` and
@@ -23,7 +23,7 @@ nothing is exposed to the internet.
    docker compose up -d --build
    ```
 
-   The app is now on `http://localhost:3000` and restarts with the machine.
+   The app is now on `http://localhost:3000` (this machine only) and restarts with the machine.
 
 4. **HTTPS on the tailnet:**
 
@@ -33,11 +33,9 @@ nothing is exposed to the internet.
 
    Open `https://<machine-name>.<tailnet>.ts.net` on the phone (`tailscale serve status` prints it).
 
-5. **First sync, by hand** (Garmin may ask for an MFA code once; the token is then saved on the volume):
-
-   ```bash
-   docker compose exec cadent uv run --no-dev --project sync python sync/cadent_sync.py
-   ```
+5. **Connect Garmin** on the phone: Settings › Garmin, sign in, and enter Garmin's code if it asks.
+   Only Garmin's token is saved, on the volume; the password isn't kept anywhere. Then tap Sync
+   on Today for the first pull.
 
 6. **Sync hourly from 6am to noon** with host cron (`crontab -e`; adjust the path). Later runs
    pick up the overnight data the watch uploads after 6am:
