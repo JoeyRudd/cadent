@@ -139,6 +139,12 @@ def fetch_wellness(garmin, days: int) -> list[dict]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--days", type=int, default=14, help="how many days back to sync")
+    parser.add_argument(
+        "--wellness-days",
+        type=int,
+        default=WELLNESS_DAYS,
+        help="how many nights back to sync wellness (the app's Sync button only needs the latest)",
+    )
     args = parser.parse_args()
 
     db_path = Path(os.environ.get("CADENT_DB") or REPO_ROOT / "data" / "cadent.db")
@@ -147,7 +153,7 @@ def main() -> None:
     conn = sqlite3.connect(db_path)
     # Runs first, so a failing wellness call never costs the runs.
     count = save(conn, fetch(garmin, args.days))
-    nights = save_wellness(conn, fetch_wellness(garmin, WELLNESS_DAYS))
+    nights = save_wellness(conn, fetch_wellness(garmin, args.wellness_days))
     conn.close()
     print(
         f"Synced {count} runs from the last {args.days} days and {nights} days of wellness to {db_path}"
