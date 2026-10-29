@@ -1,6 +1,6 @@
 // Display formatting. Everything else stays in metres and seconds.
 
-import type { Block, RunType } from "./plan";
+import type { Block, Extra, Run, RunType } from "./plan";
 
 const RUN_TYPE_LABELS: Record<RunType, string> = {
   easy: "Easy run",
@@ -25,6 +25,19 @@ export function km(metres: number): string {
 export function pace(secondsPerKm: number): string {
   const seconds = String(secondsPerKm % 60).padStart(2, "0");
   return `${Math.floor(secondsPerKm / 60)}:${seconds}`;
+}
+
+/** A run's pace target: 405 → "~6:45 /km", [390, 420] → "6:30–7:00 /km". */
+export function paceTarget(target: NonNullable<Run["pace_s_per_km"]>): string {
+  if (typeof target === "number") return `~${pace(target)} /km`;
+  return `${pace(target[0])}–${pace(target[1])} /km`;
+}
+
+/** { strides, reps [4, 6], 20 s } → "Strides 4–6 × 20 s"; without reps → "20 s strides". */
+export function extraLabel(extra: Extra): string {
+  if (!extra.reps) return `${duration(extra.duration_s)} ${extra.type}`;
+  const reps = typeof extra.reps === "number" ? extra.reps : `${extra.reps[0]}–${extra.reps[1]}`;
+  return `${extra.type.charAt(0).toUpperCase()}${extra.type.slice(1)} ${reps} × ${duration(extra.duration_s)}`;
 }
 
 /** 20 → "20 s", 300 → "5 min", 90 → "1 min 30 s". */
@@ -87,7 +100,7 @@ export function blockLabel(block: Block): { name: string; detail: string } {
   const parts: string[] = [];
   if (block.reps) parts.push(amount ? `${block.reps} × ${amount}` : `× ${block.reps}`);
   else if (amount) parts.push(amount);
-  if (block.pace_s_per_km) parts.push(`@ ${pace(block.pace_s_per_km[0])}–${pace(block.pace_s_per_km[1])} /km`);
+  if (block.pace_s_per_km) parts.push(`@ ${paceTarget(block.pace_s_per_km)}`);
   if (block.hr_ceiling) parts.push(`under ${block.hr_ceiling} bpm`);
 
   let detail = parts.join(" ");
