@@ -1,4 +1,9 @@
-import { km, weekday } from "@/lib/format";
+import Link from "next/link";
+
+import { Chevron } from "@/components/Chevron";
+import { Stat } from "@/components/Stat";
+import { ROW_LINK } from "@/components/iconButton";
+import { hoursMinutes, km, pace, weekProgress, weekday } from "@/lib/format";
 import type { DayStatus, Week, WeekDay } from "@/lib/week";
 
 // On and off plan as on the Week page's pills.
@@ -19,17 +24,38 @@ function circleText(day: WeekDay): string {
   return km(day.status === "upcoming" ? day.planned_m : day.actual_m);
 }
 
-// This week at a glance: distance done against the plan, then one circle per day.
-export function WeekStrip({ week, today }: { week: Week; today: string }) {
+// This week at a glance: distance done against the plan, time, pace and runs, then one circle per
+// day that opens its run. `previous` is last week's totals, for the line at the bottom.
+export function WeekStrip({
+  week,
+  today,
+  previous,
+}: {
+  week: Week;
+  today: string;
+  previous?: { planned_m: number; actual_m: number };
+}) {
   const percent = week.planned_m > 0 ? Math.min(100, (week.actual_m / week.planned_m) * 100) : 0;
 
   return (
     <section className="flex flex-col gap-3.5 rounded-card border border-line bg-surface p-4.5">
-      <div className="flex items-baseline justify-between">
+      <div className="flex items-center justify-between">
         <h2 className="font-semibold">This week</h2>
-        <p className="text-sm text-muted">
-          <span className="font-bold text-ink">{km(week.actual_m)}</span> of {km(week.planned_m)} km
+        <Link
+          href="/week"
+          className={`-my-2 -mr-2 flex min-h-11 items-center gap-1 rounded-button px-2 text-sm font-medium text-accent ${ROW_LINK}`}
+        >
+          Week {week.index}
+          <Chevron />
+        </Link>
+      </div>
+
+      <div>
+        <p className="flex items-baseline gap-1.5">
+          <span className="text-4xl font-bold">{km(week.actual_m)}</span>
+          <span className="text-muted">of {km(week.planned_m)} km</span>
         </p>
+        <p className="mt-0.5 text-sm text-muted">{weekProgress(week, today)}</p>
       </div>
 
       <div
@@ -44,11 +70,17 @@ export function WeekStrip({ week, today }: { week: Week; today: string }) {
         <div className="h-full rounded-full bg-accent" style={{ width: `${percent}%` }} />
       </div>
 
-      <ol className="grid grid-cols-7 gap-1.5">
+      <div className="grid grid-cols-3 gap-3">
+        <Stat value={`${week.runs_done} of ${week.runs_planned}`} label="Runs" />
+        <Stat value={week.runs_done > 0 ? hoursMinutes(week.duration_s) : null} unit="h" label="Time" />
+        <Stat value={week.pace_s_per_km === null ? null : pace(week.pace_s_per_km)} unit="/km" label="Avg pace" />
+      </div>
+
+      <ol className="-mx-2 grid grid-cols-7">
         {week.days.map((day) => {
           const isToday = day.date === today;
-          return (
-            <li key={day.date} className="flex flex-col items-center gap-1.5">
+          const circle = (
+            <>
               <span aria-hidden="true" className="text-xs text-muted">
                 {weekday(day.date).charAt(0)}
               </span>
@@ -64,10 +96,28 @@ export function WeekStrip({ week, today }: { week: Week; today: string }) {
               >
                 {circleText(day)}
               </span>
+            </>
+          );
+          const column = "flex min-h-11 flex-col items-center gap-1.5 py-1";
+          return (
+            <li key={day.date}>
+              {day.runs.length > 0 || day.recorded > 0 ? (
+                <Link href={`/run/${day.date}`} className={`${column} rounded-button ${ROW_LINK}`}>
+                  {circle}
+                </Link>
+              ) : (
+                <div className={column}>{circle}</div>
+              )}
             </li>
           );
         })}
       </ol>
+
+      {previous && (
+        <p className="text-sm text-muted">
+          Last week {km(previous.actual_m)} of {km(previous.planned_m)} km
+        </p>
+      )}
     </section>
   );
 }

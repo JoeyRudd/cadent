@@ -111,6 +111,16 @@ describe("weekOf", () => {
     expect(week.actual_m).toBe(8500);
   });
 
+  it("totals time and counts runs", () => {
+    expect(week.days[1].recorded).toBe(2);
+    expect(week.days[1].duration_s).toBe(3600);
+    expect(week.days[2].recorded).toBe(0);
+    expect(week.duration_s).toBe(5400);
+    expect(week.runs_planned).toBe(4);
+    // Tuesday's planned run was done; Monday's extra run isn't one of the four.
+    expect(week.runs_done).toBe(1);
+  });
+
   it("is undefined outside the plan", () => {
     expect(weekOf(plan, activities, "2026-11-02")).toBeUndefined();
   });
@@ -165,7 +175,7 @@ describe("neighbourWeeks", () => {
 
 describe("planTotals", () => {
   it("sums each week's planned runs, not its lifts", () => {
-    expect(planTotals(plan, [])).toEqual([{ index: 1, start: "2026-10-26", planned_m: 33000, actual_m: 0 }]);
+    expect(planTotals(plan, [])).toEqual([{ index: 1, start: "2026-10-26", cutback: false, planned_m: 33000, actual_m: 0 }]);
   });
 
   it("sums the runs recorded inside each week", () => {

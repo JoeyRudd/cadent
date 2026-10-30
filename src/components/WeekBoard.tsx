@@ -209,7 +209,7 @@ export function WeekBoard({
         })}
       </ul>
 
-      {Object.keys(targets).length > 0 && (
+      {Object.values(targets).some((days) => days.length > 0) && (
         <p className="mt-3 px-4 text-sm text-muted">Hold a run to move it to another day this week.</p>
       )}
 

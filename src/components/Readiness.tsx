@@ -1,3 +1,4 @@
+import { Stat } from "@/components/Stat";
 import { hoursMinutes } from "@/lib/format";
 import type { HrvStatus, Readiness as ReadinessData } from "@/lib/wellness";
 
@@ -8,20 +9,6 @@ const BADGES: Record<HrvStatus, { label: string; className: string }> = {
   LOW: { label: "HRV low", className: "bg-off-plan-soft text-off-plan" },
   POOR: { label: "HRV poor", className: "bg-off-plan-soft text-off-plan" },
 };
-
-/** One figure with its unit and usual value; a dash when Garmin has nothing for last night. */
-function Stat({ value, unit, label, usual }: { value: string | null; unit?: string; label: string; usual: string | null }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <p className="text-2xl font-bold">
-        {value ?? "–"}
-        {unit && value !== null && <span className="text-sm font-medium text-muted"> {unit}</span>}
-      </p>
-      <p className="text-xs text-muted">{label}</p>
-      {usual !== null && <p className="text-xs text-muted">{usual}</p>}
-    </div>
-  );
-}
 
 // Last night from Garmin: HRV, sleep and resting heart rate, each against its usual.
 export function Readiness({ readiness }: { readiness: ReadinessData }) {

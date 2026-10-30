@@ -6,7 +6,8 @@ import { afterAll, describe, expect, it } from "vitest";
 
 import { detailsFor, type Activity, type Point } from "./activities";
 import type { Plan, Run } from "./plan";
-import { joinDetails, kmSplits, lapKinds, paceSeries, runDetail, runStats, zoneTime } from "./run";
+import { paceOf } from "./week";
+import { joinDetails, kmSplits, lapKinds, paceSeries, recentRuns, runDetail, runStats, zoneTime } from "./run";
 
 const plan: Plan = {
   name: "Test plan",
@@ -275,5 +276,36 @@ describe("detailsFor", () => {
         ],
       ]),
     );
+  });
+});
+
+describe("paceOf", () => {
+  it("is seconds per kilometre, or null without distance", () => {
+    expect(paceOf(6200, 2480)).toBe(400);
+    expect(paceOf(0, 2480)).toBeNull();
+  });
+});
+
+describe("recentRuns", () => {
+  const acts = [
+    activity({ id: "a", date: "2026-10-27" }),
+    activity({ id: "b", date: "2026-10-27", distance_m: 1000, duration_s: 400 }),
+    activity({ id: "c", date: "2026-10-28", distance_m: 8000, duration_s: 2700 }),
+    activity({ id: "d", date: "2026-10-29", type: "cycling" }),
+    activity({ id: "e", date: "2026-10-20", distance_m: 5000, duration_s: 2000 }),
+  ];
+
+  it("lists days with a run, newest first, a day's runs as one", () => {
+    const runs = recentRuns(plan, acts, TODAY);
+    expect(runs.map((r) => r.date)).toEqual(["2026-10-28", "2026-10-27", "2026-10-20"]);
+    expect(runs[1].recorded.distance_m).toBe(7200);
+    expect(runs[0].type).toBe("tempo");
+    expect(runs[2].type).toBeUndefined();
+    expect(runs[2].status).toBeUndefined();
+    expect(runs[0].status).toBe("done");
+  });
+
+  it("honours the limit", () => {
+    expect(recentRuns(plan, acts, TODAY, 2).map((r) => r.date)).toEqual(["2026-10-28", "2026-10-27"]);
   });
 });

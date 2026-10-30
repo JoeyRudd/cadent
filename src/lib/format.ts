@@ -1,6 +1,7 @@
 // Display formatting. Everything else stays in metres and seconds.
 
 import type { Block, Extra, Run, RunType } from "./plan";
+import type { Week } from "./week";
 
 const RUN_TYPE_LABELS: Record<RunType, string> = {
   easy: "Easy run",
@@ -106,4 +107,48 @@ export function blockLabel(block: Block): { name: string; detail: string } {
   let detail = parts.join(" ");
   if (block.recovery_s) detail += `, ${duration(block.recovery_s)} rest`;
   return { name: block.label.charAt(0).toUpperCase() + block.label.slice(1), detail };
+}
+
+const SHORT_DATE = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+const MONTH = new Intl.DateTimeFormat("en-US", { month: "short", timeZone: "UTC" });
+
+/** "2026-10-26" → "Oct 26". */
+export function shortDate(day: string): string {
+  return SHORT_DATE.format(new Date(day));
+}
+
+/** "2026-11-02" → "Nov". */
+export function monthShort(day: string): string {
+  return MONTH.format(new Date(day));
+}
+
+/** A run's time and pace on one line: "41:12 · 5:48 /km". */
+export function timeAndPace(duration_s: number, pace_s_per_km: number | null): string {
+  return pace_s_per_km === null ? clock(duration_s) : `${clock(duration_s)} · ${pace(pace_s_per_km)} /km`;
+}
+
+/** "2026-10-28" → "28". */
+export function dayOfMonth(day: string): string {
+  return String(Number(day.slice(8, 10)));
+}
+
+/** Where a week stands against the plan, in a few gentle words. */
+export function weekProgress(
+  week: Pick<Week, "start" | "end" | "planned_m" | "actual_m" | "runs_planned">,
+  today: string,
+): string {
+  const toGo = week.planned_m - week.actual_m;
+  if (week.start > today) return `Starts ${shortDayLabel(week.start)}`;
+  if (toGo <= 0) return "Week's distance done";
+  if (week.end < today) return `${km(toGo)} km under plan, that's fine`;
+  return `${km(toGo)} km to go`;
+}
+
+/** How far a week is from this one: "This week", "Last week", "3 weeks ago", "Next week", "In 3 weeks". Both are Mondays. */
+export function weeksAway(start: string, thisWeek: string): string {
+  const weeks = Math.round((new Date(start).getTime() - new Date(thisWeek).getTime()) / (7 * 24 * 3600 * 1000));
+  if (weeks === 0) return "This week";
+  if (weeks === -1) return "Last week";
+  if (weeks === 1) return "Next week";
+  return weeks < 0 ? `${-weeks} weeks ago` : `In ${weeks} weeks`;
 }

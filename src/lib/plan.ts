@@ -63,6 +63,11 @@ export function isDay(value: string): boolean {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 
+/** The hour (0 to 23) at `now` in Toronto. */
+export function localHour(now: Date): number {
+  return Number(new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE, hour: "numeric", hourCycle: "h23" }).format(now));
+}
+
 function allSessions(plan: Plan): Session[] {
   return plan.weeks.flatMap((week) => week.sessions);
 }
