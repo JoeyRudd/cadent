@@ -165,7 +165,17 @@ describe("neighbourWeeks", () => {
 
 describe("planTotals", () => {
   it("sums each week's planned runs, not its lifts", () => {
-    expect(planTotals(plan)).toEqual([{ index: 1, start: "2026-10-26", planned_m: 33000 }]);
+    expect(planTotals(plan, [])).toEqual([{ index: 1, start: "2026-10-26", planned_m: 33000, actual_m: 0 }]);
+  });
+
+  it("sums the runs recorded inside each week", () => {
+    const activities = [
+      activity("2026-10-25", 9000), // the Sunday before
+      activity("2026-10-27", 5000),
+      activity("2026-11-01", 14000),
+      activity("2026-10-28", 5000, "cycling"),
+    ];
+    expect(planTotals(plan, activities)[0].actual_m).toBe(19000);
   });
 });
 

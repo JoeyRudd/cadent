@@ -102,6 +102,8 @@ export function WeekBoard({
     // A second finger means a pinch, not a drag: drop the first press too.
     if (press.current) return onPointerCancel();
     if (e.button !== 0 || pending) return;
+    // Scrolling a strip sideways isn't a swipe to another week.
+    if ((e.target as Element).closest("[data-scrolls-x]")) return;
     const from = (e.target as Element).closest<HTMLElement>("[data-day]")?.dataset.day;
     const p: Press = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, touch: e.pointerType === "touch" };
     if (from && targets[from]) {

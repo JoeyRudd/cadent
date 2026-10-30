@@ -20,6 +20,7 @@ export type WeekDay = {
 
 export type Week = {
   index: number;
+  cutback: boolean;
   start: string;
   end: string;
   days: WeekDay[];
@@ -76,6 +77,7 @@ export function weekOf(plan: Plan, activities: Activity[], today: string, day = 
 
   return {
     index: week.index,
+    cutback: week.cutback,
     start: week.start,
     end: addDays(week.start, 6),
     days,
@@ -100,11 +102,20 @@ export function neighbourWeeks(plan: Plan, start: string): { prev?: string; next
   return { prev: starts.findLast((s) => s < start), next: starts.find((s) => s > start) };
 }
 
-/** Every plan week's planned distance, for the strip of weeks across the plan. */
-export function planTotals(plan: Plan): { index: number; start: string; planned_m: number }[] {
-  return plan.weeks.map((w) => ({
-    index: w.index,
-    start: w.start,
-    planned_m: w.sessions.reduce((sum, s) => sum + (s.kind === "run" ? s.distance_m : 0), 0),
-  }));
+/** Every plan week's planned distance and what was run, for the strip of weeks across the plan. */
+export function planTotals(
+  plan: Plan,
+  activities: Activity[],
+): { index: number; start: string; planned_m: number; actual_m: number }[] {
+  return plan.weeks.map((w) => {
+    const end = addDays(w.start, 6);
+    return {
+      index: w.index,
+      start: w.start,
+      planned_m: w.sessions.reduce((sum, s) => sum + (s.kind === "run" ? s.distance_m : 0), 0),
+      actual_m: activities
+        .filter((a) => w.start <= a.date && a.date <= end && isRun(a))
+        .reduce((sum, a) => sum + a.distance_m, 0),
+    };
+  });
 }

@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { moveRun } from "@/app/run/[date]/actions";
 import { ICON_BUTTON } from "@/components/iconButton";
 import { WeekBoard } from "@/components/WeekBoard";
+import { WeekPicker } from "@/components/WeekPicker";
 import { activitiesBetween } from "@/lib/activities";
 import { km } from "@/lib/format";
 import { currentPlan, moveTargets } from "@/lib/moves";
@@ -39,7 +40,9 @@ async function ShownWeek({ searchParams }: { searchParams: Promise<Record<string
   const plan = currentPlan();
   const day = dayParam(param) ?? today;
   const bounds = weekBounds(plan, day);
-  const week = bounds && weekOf(plan, activitiesBetween(bounds.start, bounds.end), today, day);
+  // The whole plan's runs at once: the strip of weeks shows each week's total.
+  const activities = activitiesBetween(plan.weeks[0].start, addDays(plan.weeks[plan.weeks.length - 1].start, 6));
+  const week = bounds && weekOf(plan, activities, today, day);
   const start = bounds?.start ?? mondayOf(day);
   const thisWeek = weekBounds(plan, today)?.start ?? mondayOf(today);
   const { prev, next } = neighbourWeeks(plan, start);
@@ -49,7 +52,7 @@ async function ShownWeek({ searchParams }: { searchParams: Promise<Record<string
       <header className="flex items-center gap-2">
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-2 text-muted">
-            {week ? `Week ${week.index}` : "No plan"}
+            {week ? `Week ${week.index} of ${plan.weeks[plan.weeks.length - 1].index}` : "No plan"}
             {/* A pill, so it reads as a way back rather than a label for the week shown. */}
             {start !== thisWeek && (
               <Link
@@ -68,7 +71,7 @@ async function ShownWeek({ searchParams }: { searchParams: Promise<Record<string
         <PageLink start={next} label="Next week" path="M9 6l6 6-6 6" />
       </header>
 
-      <PlanWeeks plan={plan} shown={start} thisWeek={thisWeek} />
+      <WeekPicker weeks={planTotals(plan, activities)} shown={start} thisWeek={thisWeek} />
       {week ? (
         <Summary week={week} today={today} />
       ) : (
@@ -113,6 +116,7 @@ function Summary({ week, today }: { week: Week; today: string }) {
 
   return (
     <section className="mt-4 rounded-card bg-surface p-6">
+      {week.cutback && <p className="mb-1 text-sm font-medium text-muted">Cutback week</p>}
       <p className="text-6xl font-semibold">
         {future ? (
           <>
@@ -147,43 +151,5 @@ function PageLink({ start, label, path }: { start?: string; label: string; path:
         <path d={path} />
       </svg>
     </Link>
-  );
-}
-
-// Planned km for every week of the plan as bars: the shown week in the accent, a dot under this
-// week. Each bar jumps to its week; the arrows above do the same one step at a time.
-function PlanWeeks({ plan, shown, thisWeek }: { plan: Plan; shown: string; thisWeek: string }) {
-  const weeks = planTotals(plan);
-  const most = Math.max(...weeks.map((w) => w.planned_m));
-
-  return (
-    <nav aria-label="Weeks of the plan" className="mt-4">
-      <ol className="flex h-10">
-        {weeks.map((w) => {
-          const isShown = w.start === shown;
-          return (
-            <li key={w.start} className="flex-1">
-              <Link
-                href={weekHref(w.start)}
-                aria-label={`Week ${w.index}, ${km(w.planned_m)} km${w.start === thisWeek ? ", this week" : ""}`}
-                aria-current={isShown ? "page" : undefined}
-                className="flex h-full flex-col justify-end gap-1 px-0.5"
-              >
-                {/* The bar height is data, so it can't be a class. */}
-                <span
-                  className={`w-full rounded-sm ${isShown ? "bg-accent" : "bg-muted"}`}
-                  style={{ height: `${most > 0 ? Math.max(8, (w.planned_m / most) * 100) : 8}%` }}
-                />
-                <span className={`mx-auto size-1.5 rounded-full ${w.start === thisWeek ? "bg-ink" : ""}`} />
-              </Link>
-            </li>
-          );
-        })}
-      </ol>
-      <p aria-hidden="true" className="mt-1 flex justify-between text-xs text-muted">
-        <span>{shortDate(plan.weeks[0].start)}</span>
-        <span>Race {shortDate(plan.race.date)}</span>
-      </p>
-    </nav>
   );
 }

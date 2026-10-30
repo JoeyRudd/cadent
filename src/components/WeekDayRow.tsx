@@ -36,6 +36,7 @@ export function WeekDayRow({ day, isToday, drop }: { day: WeekDay; isToday: bool
   const planned = day.runs.map((run) => `${runTypeLabel(run.type)} ${km(run.distance_m)} km`).join(" + ");
   const lifts = day.lifts.map((lift) => (lift.after_run ? `${lift.name}, after the run` : lift.name)).join(" + ");
   const detail = note(day);
+  const actual = day.actual_m > 0 ? `${km(day.actual_m)} km` : day.status === "upcoming" ? undefined : "–";
   const tint = drop === "over" ? "bg-accent text-on-accent" : isToday ? "bg-accent-soft text-accent-ink" : "";
   const outline = drop === "free" ? "outline-2 -outline-offset-4 outline-dashed outline-accent" : "";
   const quiet = isToday || drop === "over" ? "" : "text-muted";
@@ -53,7 +54,8 @@ export function WeekDayRow({ day, isToday, drop }: { day: WeekDay; isToday: bool
         <p className={`text-sm font-semibold ${drop === "taken" ? quiet : ""}`}>{DROP_TEXT[drop]}</p>
       ) : (
         <div className="text-right">
-          <p className="font-semibold">{day.actual_m > 0 ? `${km(day.actual_m)} km` : "–"}</p>
+          {/* Nothing run yet on a day still to come, so no dash either. */}
+          {actual && <p className="font-semibold">{actual}</p>}
           {pill && (
             <p
               className={`mt-1 rounded-full px-2 text-xs font-medium ${
