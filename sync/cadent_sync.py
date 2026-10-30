@@ -1,4 +1,5 @@
-"""Pull recent Garmin runs and overnight wellness (HRV, sleep, resting HR) into Cadent's SQLite database."""
+"""Pull recent Garmin runs, their laps and samples, and overnight wellness (HRV, sleep, resting HR) into
+Cadent's SQLite database."""
 
 import argparse
 import json
@@ -57,6 +58,19 @@ ON CONFLICT(date) DO UPDATE SET
 """
 
 
+# One row per run: its Garmin laps and its samples, each a JSON array of arrays (see to_details_row).
+# Fetched once per run: the run detail screen only needs them as Garmin first recorded them.
+DETAILS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS details (
+  activity_id TEXT PRIMARY KEY,
+  laps TEXT NOT NULL,
+  points TEXT NOT NULL
+)
+"""
+
+# Samples per run: enough for a phone-width chart; Garmin downsamples to this.
+DETAIL_POINTS = 500
+
 # Readiness compares last night with the 7 nights before it, so older wellness is never read.
 WELLNESS_DAYS = 7
 
@@ -82,6 +96,39 @@ def to_row(activity: dict) -> dict:
     }
 
 
+def to_details_row(activity_id: str, splits: dict | None, details: dict | None) -> dict:
+    """Laps as [distance_m, duration_s, avg_hr, max_hr, elev_gain_m, cadence_spm] and samples as
+    [elapsed_s, distance_m, hr, speed_m_s, elevation_m]. Any value but the first two can be null."""
+    from garminconnect.activity_details import parse_activity_detail_metrics
+
+    laps = [
+        [
+            round(lap.get("distance") or 0),
+            round(lap.get("movingDuration") or lap.get("duration") or 0),
+            round_or_none(lap.get("averageHR")),
+            round_or_none(lap.get("maxHR")),
+            round_or_none(lap.get("elevationGain")),
+            round_or_none(lap.get("averageRunCadence")),
+        ]
+        for lap in (splits or {}).get("lapDTOs") or []
+    ]
+    points = [
+        [
+            round(sample["sumDuration"]),
+            round(sample["sumDistance"]),
+            round_or_none(sample.get("directHeartRate")),
+            round(sample["directSpeed"], 2) if sample.get("directSpeed") is not None else None,
+            round(sample["directElevation"], 1)
+            if sample.get("directElevation") is not None
+            else None,
+        ]
+        for sample in parse_activity_detail_metrics(details or {})
+        # A sample before the GPS locks has no distance yet; it can't sit on a distance axis.
+        if sample.get("sumDuration") is not None and sample.get("sumDistance") is not None
+    ]
+    return {"activity_id": activity_id, "laps": json.dumps(laps), "points": json.dumps(points)}
+
+
 def to_wellness_row(day: str, hrv: dict | None, sleep: dict | None, stats: dict | None) -> dict:
     summary = (hrv or {}).get("hrvSummary") or {}
     return {
@@ -101,6 +148,24 @@ def save(conn: sqlite3.Connection, activities: list[dict]) -> int:
         conn.execute(SCHEMA)
         conn.executemany(UPSERT, rows)
     return len(rows)
+
+
+def missing_details(conn: sqlite3.Connection, activities: list[dict]) -> list[str]:
+    """Ids of the runs in `activities` with no details row yet."""
+    conn.execute(DETAILS_SCHEMA)
+    have = {row[0] for row in conn.execute("SELECT activity_id FROM details")}
+    return [
+        row["id"] for row in (to_row(a) for a in activities if is_run(a)) if row["id"] not in have
+    ]
+
+
+def save_details(conn: sqlite3.Connection, row: dict) -> None:
+    with conn:
+        conn.execute(DETAILS_SCHEMA)
+        conn.execute(
+            "INSERT OR REPLACE INTO details (activity_id, laps, points) VALUES (:activity_id, :laps, :points)",
+            row,
+        )
 
 
 def save_wellness(conn: sqlite3.Connection, rows: list[dict]) -> int:
@@ -181,6 +246,14 @@ def fetch(garmin, days: int) -> list[dict]:
     return garmin.get_activities_by_date(start.isoformat(), today.isoformat())
 
 
+def fetch_details(garmin, activity_id: str) -> dict:
+    return to_details_row(
+        activity_id,
+        garmin.get_activity_splits(activity_id),
+        garmin.get_activity_details(activity_id, maxchart=DETAIL_POINTS),
+    )
+
+
 def fetch_wellness(garmin, days: int) -> list[dict]:
     # Garmin dates overnight data by the morning you wake up, so "today" holds last night.
     today = date.today()
@@ -234,9 +307,13 @@ def main() -> None:
         # including a token saved before Settings could connect.
         if not account.exists():
             account.write_text(json.dumps({"name": garmin.get_full_name()}))
-        # Runs first, so a failing wellness call never costs the runs.
-        count = save(conn, fetch(garmin, args.days))
+        # Runs first, so a failing wellness or details call never costs the runs.
+        activities = fetch(garmin, args.days)
+        count = save(conn, activities)
         nights = save_wellness(conn, fetch_wellness(garmin, args.wellness_days))
+        # One run at a time, so each run's details are kept even if a later one fails.
+        for activity_id in missing_details(conn, activities):
+            save_details(conn, fetch_details(garmin, activity_id))
     except GarminConnectAuthenticationError as error:
         account.unlink(missing_ok=True)
         print(f"Garmin isn't connected (connect it in Settings): {error}", file=sys.stderr)
