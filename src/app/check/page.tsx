@@ -1,18 +1,33 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
+import { Suspense } from "react";
 
+import { activitiesBetween, type Activity } from "@/lib/activities";
 import { dayLabel } from "@/lib/format";
-import { plan, type Run } from "@/lib/plan";
-import { validate, type Finding } from "@/lib/rules";
+import { currentPlan } from "@/lib/moves";
+import { allSessions } from "@/lib/plan";
+import { validate, WINDOW_DAYS, type Finding } from "@/lib/rules";
+import { addDays, isRun } from "@/lib/week";
 
 export const metadata: Metadata = { title: "Plan check · Cadent" };
 
 type WeekFindings = { index: number; start: string; findings: Finding[] };
 
-// The plan only changes on redeploy, so this is checked once at build time.
-// No Garmin history yet: the plan's runs are checked against each other.
-export default function Check() {
-  const runs = plan.weeks.flatMap((week) => week.sessions).filter((s): s is Run => s.kind === "run");
-  const findings = validate(runs, []);
+export default function CheckPage() {
+  return (
+    <main className="mx-auto max-w-md px-4 py-8">
+      <Suspense>
+        <Check />
+      </Suspense>
+    </main>
+  );
+}
+
+// Reads the database (moved runs, Garmin history), so it renders per request instead of at build time.
+async function Check() {
+  await connection();
+  const plan = currentPlan();
+  const findings = validate(allSessions(plan), history(plan.weeks[0].start));
   const weeks = plan.weeks
     .map((week) => {
       const days = new Set(week.sessions.map((s) => s.date));
@@ -21,7 +36,7 @@ export default function Check() {
     .filter((week) => week.findings.length > 0);
 
   return (
-    <main className="mx-auto max-w-md px-4 py-8">
+    <>
       <p className="text-muted">Plan check</p>
       <h1 className="mt-1 text-2xl font-semibold">{plan.name}</h1>
 
@@ -31,8 +46,18 @@ export default function Check() {
           <Week key={week.index} week={week} />
         ))}
       </div>
-    </main>
+    </>
   );
+}
+
+/** Garmin runs in the 30 days before the plan starts. A database error checks the plan on its own. */
+function history(start: string): Activity[] {
+  try {
+    return activitiesBetween(addDays(start, -WINDOW_DAYS), addDays(start, -1)).filter(isRun);
+  } catch (error) {
+    console.error("Couldn't read activities", error);
+    return [];
+  }
 }
 
 function Summary({ findings }: { findings: Finding[] }) {
