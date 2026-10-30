@@ -11,7 +11,7 @@ import { ZoneTime } from "@/components/charts/ZoneTime";
 import { activitiesBetween, detailsFor, type Activity, type Details } from "@/lib/activities";
 import { clock, km, pace, paceTarget, runTypeLabel, shortDayLabel, zoneLabel } from "@/lib/format";
 import { checkInOn } from "@/lib/checkins";
-import { currentPlan, moveError, moveWarnings } from "@/lib/moves";
+import { currentPlan, moveTargets, moveWarnings } from "@/lib/moves";
 import { isDay, localDate, type Plan, type Run } from "@/lib/plan";
 import {
   joinDetails,
@@ -311,7 +311,8 @@ function Part({ title, note, children }: { title: string; note?: string; childre
 
 /** Monday to Sunday of the run's week; a day is free when the run on `date` could move there. */
 function weekDays(moved: Plan, date: string) {
-  return (weekOf(moved, [], date)?.days ?? []).map((day) => ({ date: day.date, free: !moveError(moved, date, day.date) }));
+  const free = moveTargets(moved, date);
+  return (weekOf(moved, [], date)?.days ?? []).map((day) => ({ date: day.date, free: free.includes(day.date) }));
 }
 
 /** The check-in already saved for the day. A database error shows an empty form rather than failing the page. */

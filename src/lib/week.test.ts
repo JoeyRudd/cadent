@@ -6,7 +6,7 @@ import { afterAll, describe, expect, it } from "vitest";
 
 import { activitiesBetween, type Activity } from "./activities";
 import type { Plan } from "./plan";
-import { currentWeek, dayStatus, pickWeek, weekBounds, weekOf, weeksOf } from "./week";
+import { dayParam, dayStatus, mondayOf, neighbourWeeks, planTotals, weekBounds, weekOf } from "./week";
 
 // One week, so editing data/plan.json never breaks these tests.
 const plan: Plan = {
@@ -95,6 +95,17 @@ describe("weekOf", () => {
     ]);
   });
 
+  it("lists each day's lifts next to its runs", () => {
+    expect(week.days[0].lifts).toEqual([{ date: "2026-10-26", kind: "lift", name: "Full-body A" }]);
+    expect(week.days[1].lifts).toEqual([]);
+  });
+
+  it("shows another week with statuses against today", () => {
+    const past = weekOf(plan, activities, "2026-11-20", "2026-10-28")!;
+    expect(past.start).toBe("2026-10-26");
+    expect(past.days.map((d) => d.status)).toEqual(["extra", "done", "missed", "rest", "missed", "rest", "missed"]);
+  });
+
   it("totals planned and actual distance", () => {
     expect(week.planned_m).toBe(33000);
     expect(week.actual_m).toBe(8500);
@@ -105,43 +116,66 @@ describe("weekOf", () => {
   });
 });
 
-describe("weeksOf", () => {
-  const twoWeeks: Plan = {
+describe("mondayOf", () => {
+  it("is the Monday of the day's calendar week", () => {
+    expect(mondayOf("2026-10-26")).toBe("2026-10-26");
+    expect(mondayOf("2026-10-29")).toBe("2026-10-26");
+    expect(mondayOf("2026-11-01")).toBe("2026-10-26");
+    expect(mondayOf("2026-01-01")).toBe("2025-12-29");
+  });
+});
+
+describe("dayParam", () => {
+  it("takes a real day", () => {
+    expect(dayParam("2026-10-28")).toBe("2026-10-28");
+  });
+
+  it("ignores a missing, repeated or made-up day", () => {
+    expect(dayParam(undefined)).toBeUndefined();
+    expect(dayParam(["2026-10-26", "2026-11-02"])).toBeUndefined();
+    expect(dayParam("2026-02-30")).toBeUndefined();
+    expect(dayParam("next")).toBeUndefined();
+  });
+});
+
+describe("neighbourWeeks", () => {
+  const three: Plan = {
     ...plan,
-    weeks: [plan.weeks[0], { index: 2, start: "2026-11-02", cutback: true, sessions: [] }],
+    weeks: [
+      { index: 1, start: "2026-10-26", cutback: false, sessions: [] },
+      { index: 2, start: "2026-11-02", cutback: false, sessions: [] },
+      { index: 3, start: "2026-11-09", cutback: false, sessions: [] },
+    ],
   };
 
-  it("compares past and future weeks with today", () => {
-    const [past] = weeksOf(plan, [activity("2026-10-27", 5000)], "2026-11-05");
-    expect(past.days.map((d) => d.status)).toEqual(["rest", "done", "missed", "rest", "missed", "rest", "missed"]);
-    const [future] = weeksOf(plan, [], "2026-10-20");
-    expect(future.days.map((d) => d.status)).toEqual(["rest", "upcoming", "upcoming", "rest", "upcoming", "rest", "upcoming"]);
+  it("is the weeks either side", () => {
+    expect(neighbourWeeks(three, "2026-11-02")).toEqual({ prev: "2026-10-26", next: "2026-11-09" });
   });
 
-  it("finds this week", () => {
-    const weeks = weeksOf(twoWeeks, [], "2026-11-03");
-    expect(currentWeek(weeks, "2026-11-03")?.index).toBe(2);
-    expect(currentWeek(weeks, "2026-12-01")).toBeUndefined();
+  it("stops at the ends of the plan", () => {
+    expect(neighbourWeeks(three, "2026-10-26")).toEqual({ prev: undefined, next: "2026-11-02" });
+    expect(neighbourWeeks(three, "2026-11-09")).toEqual({ prev: "2026-11-02", next: undefined });
   });
 
-  describe("pickWeek", () => {
-    const weeks = weeksOf(twoWeeks, [], "2026-10-28");
+  it("leads back into the plan from a week outside it", () => {
+    expect(neighbourWeeks(three, "2026-10-05")).toEqual({ prev: undefined, next: "2026-10-26" });
+    expect(neighbourWeeks(three, "2027-01-04")).toEqual({ prev: "2026-11-09", next: undefined });
+  });
+});
 
-    it("picks the week asked for", () => {
-      expect(pickWeek(weeks, "2", "2026-10-28").index).toBe(2);
-      expect(weeks[1].cutback).toBe(true);
-    });
+describe("planTotals", () => {
+  it("sums each week's planned runs, not its lifts", () => {
+    expect(planTotals(plan, [])).toEqual([{ index: 1, start: "2026-10-26", planned_m: 33000, actual_m: 0 }]);
+  });
 
-    it("falls back to this week for a missing or unknown index", () => {
-      expect(pickWeek(weeks, undefined, "2026-10-28").index).toBe(1);
-      expect(pickWeek(weeks, ["2", "1"], "2026-10-28").index).toBe(1);
-      expect(pickWeek(weeks, "9", "2026-11-03").index).toBe(2);
-    });
-
-    it("falls back to the nearest end outside the plan", () => {
-      expect(pickWeek(weeks, undefined, "2026-10-01").index).toBe(1);
-      expect(pickWeek(weeks, undefined, "2026-12-01").index).toBe(2);
-    });
+  it("sums the runs recorded inside each week", () => {
+    const activities = [
+      activity("2026-10-25", 9000), // the Sunday before
+      activity("2026-10-27", 5000),
+      activity("2026-11-01", 14000),
+      activity("2026-10-28", 5000, "cycling"),
+    ];
+    expect(planTotals(plan, activities)[0].actual_m).toBe(19000);
   });
 });
 

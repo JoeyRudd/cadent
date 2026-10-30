@@ -2,20 +2,21 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
-import { WeekDayRow } from "@/components/WeekDayRow";
-import { WeekPicker } from "@/components/WeekPicker";
+import { moveRun } from "@/app/run/[date]/actions";
 import { ICON_BUTTON } from "@/components/iconButton";
+import { WeekBoard } from "@/components/WeekBoard";
+import { WeekPicker } from "@/components/WeekPicker";
 import { activitiesBetween } from "@/lib/activities";
-import { dayLabel, km } from "@/lib/format";
-import { currentPlan } from "@/lib/moves";
-import { localDate } from "@/lib/plan";
-import { addDays, currentWeek, pickWeek, weeksOf, type Week } from "@/lib/week";
+import { km } from "@/lib/format";
+import { currentPlan, moveTargets } from "@/lib/moves";
+import { localDate, type Plan } from "@/lib/plan";
+import { addDays, dayParam, mondayOf, neighbourWeeks, planTotals, weekBounds, weekOf, type Week } from "@/lib/week";
 
 export default function WeekPage({ searchParams }: PageProps<"/week">) {
   return (
     <main className="mx-auto max-w-md px-4 py-8">
       <Suspense>
-        <PlanWeek searchParams={searchParams} />
+        <ShownWeek searchParams={searchParams} />
       </Suspense>
     </main>
   );
@@ -28,102 +29,127 @@ function shortDate(day: string): string {
   );
 }
 
+const weekHref = (start: string) => `/week?start=${start}`;
+
 // Reads the clock and the database, so it renders per request instead of at build time.
-// `?w=5` opens week 5; without it, this week.
-async function PlanWeek({ searchParams }: { searchParams: PageProps<"/week">["searchParams"] }) {
-  const { w } = await searchParams;
+// `?start=` picks the week (any day in it works); without it, this week.
+async function ShownWeek({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { start: param } = await searchParams;
   await connection();
   const today = localDate(new Date());
   const plan = currentPlan();
-  const first = plan.weeks[0].start;
-  const last = addDays(plan.weeks[plan.weeks.length - 1].start, 6);
-  const weeks = weeksOf(plan, activitiesBetween(first, last), today);
-  const week = pickWeek(weeks, w, today);
-  const at = weeks.indexOf(week);
+  const day = dayParam(param) ?? today;
+  const bounds = weekBounds(plan, day);
+  // The whole plan's runs at once: the strip of weeks shows each week's total.
+  const activities = activitiesBetween(plan.weeks[0].start, addDays(plan.weeks[plan.weeks.length - 1].start, 6));
+  const week = bounds && weekOf(plan, activities, today, day);
+  const start = bounds?.start ?? mondayOf(day);
+  const thisWeek = weekBounds(plan, today)?.start ?? mondayOf(today);
+  const { prev, next } = neighbourWeeks(plan, start);
 
-  return (
+  const header = (
     <>
       <header className="flex items-center gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-muted">
-            Week {week.index} of {weeks[weeks.length - 1].index}
-            {week.cutback ? ", cutback" : ""}
+          <p className="flex items-center gap-2 text-muted">
+            {week ? `Week ${week.index} of ${plan.weeks[plan.weeks.length - 1].index}` : "No plan"}
+            {/* A pill, so it reads as a way back rather than a label for the week shown. */}
+            {start !== thisWeek && (
+              <Link
+                href="/week"
+                className="-my-2.5 rounded-full bg-accent-soft px-3 py-0.5 text-sm font-medium text-accent-ink outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent"
+              >
+                This week
+              </Link>
+            )}
           </p>
-          <h1 className="mt-1 text-2xl font-semibold">
-            {shortDate(week.start)} – {shortDate(week.end)}
+          <h1 className="text-2xl font-semibold">
+            {shortDate(start)} to {shortDate(addDays(start, 6))}
           </h1>
         </div>
-        <Pager week={weeks[at - 1]} label="Previous week" path="M15 6l-6 6 6 6" />
-        <Pager week={weeks[at + 1]} label="Next week" path="M9 6l6 6-6 6" />
+        <PageLink start={prev} label="Previous week" path="M15 6l-6 6 6 6" />
+        <PageLink start={next} label="Next week" path="M9 6l6 6-6 6" />
       </header>
 
-      <div className="mt-4">
-        <WeekPicker
-          // Only the totals, not every day and run, go to the client.
-          weeks={weeks.map(({ index, planned_m, actual_m }) => ({ index, planned_m, actual_m }))}
-          selected={week.index}
-          current={currentWeek(weeks, today)?.index}
-        />
-      </div>
-
-      <Summary week={week} today={today} />
-
-      <ul className="mt-4 divide-y divide-line overflow-hidden rounded-card bg-surface">
-        {week.days.map((day) => (
-          <WeekDayRow key={day.date} day={day} isToday={day.date === today} />
-        ))}
-      </ul>
+      <WeekPicker weeks={planTotals(plan, activities)} shown={start} thisWeek={thisWeek} />
+      {week ? (
+        <Summary week={week} today={today} />
+      ) : (
+        <p className="mt-6 rounded-card bg-surface p-6 text-muted">
+          No plan this week. The plan runs {shortDate(plan.weeks[0].start)} to {shortDate(plan.race.date)}.
+        </p>
+      )}
     </>
   );
-}
 
-/** A round chevron link to the week before or after; dimmed at either end of the plan. */
-function Pager({ week, label, path }: { week: Week | undefined; label: string; path: string }) {
-  const icon = (
-    <svg
-      aria-hidden="true"
-      className="size-5"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+  if (!week) return header;
+  return (
+    <WeekBoard
+      key={week.start}
+      days={week.days}
+      today={today}
+      targets={movableRuns(plan, week)}
+      move={moveRun}
+      prev={prev && weekHref(prev)}
+      next={next && weekHref(next)}
     >
-      <path d={path} />
-    </svg>
-  );
-  return week ? (
-    <Link href={`/week?w=${week.index}`} aria-label={label} className={ICON_BUTTON}>
-      {icon}
-    </Link>
-  ) : (
-    <span aria-label={label} aria-disabled="true" className={`${ICON_BUTTON} opacity-40`}>
-      {icon}
-    </span>
+      {header}
+    </WeekBoard>
   );
 }
 
-/** The week's main number: run against planned so far, or just what's planned before it starts. */
+/** For each day whose run can move, the days it can move to. A recorded run stays put unless it was moved there, as on run detail. */
+function movableRuns(moved: Plan, week: Week): Record<string, string[]> {
+  const movable = week.days.filter((d) => d.runs.length > 0 && (d.actual_m === 0 || d.runs.some((r) => r.planned_date)));
+  return Object.fromEntries(movable.map((d) => [d.date, moveTargets(moved, d.date)]));
+}
+
+/** The week's one number: distance run against the plan, or what's planned for a week still to come. */
 function Summary({ week, today }: { week: Week; today: string }) {
-  const ahead = today < week.start;
   const toGo = week.planned_m - week.actual_m;
-  const runs = week.days.reduce((sum, d) => sum + d.runs.length, 0);
-  const note = ahead
-    ? `${runs} ${runs === 1 ? "run" : "runs"}, starts ${dayLabel(week.start)}`
-    : toGo <= 0
-      ? "Week's distance done"
-      : week.end < today
-        ? `${km(toGo)} km short, that's fine`
-        : `${km(toGo)} km to go`;
+  const future = week.start > today;
+  let line: string;
+  if (future) line = `${week.days.reduce((n, d) => n + d.runs.length, 0)} runs planned`;
+  else if (toGo <= 0) line = "Week's distance done";
+  else if (week.end < today) line = `${km(toGo)} km under plan, that's fine`;
+  else line = `${km(toGo)} km to go`;
 
   return (
     <section className="mt-4 rounded-card bg-surface p-6">
+      {week.cutback && <p className="mb-1 text-sm font-medium text-muted">Cutback week</p>}
       <p className="text-6xl font-semibold">
-        {ahead ? km(week.planned_m) : km(week.actual_m)}{" "}
-        <span className="text-2xl font-medium text-muted">{ahead ? "km planned" : `/ ${km(week.planned_m)} km`}</span>
+        {future ? (
+          <>
+            {km(week.planned_m)} <span className="text-2xl font-medium text-muted">km planned</span>
+          </>
+        ) : (
+          <>
+            {km(week.actual_m)} <span className="text-2xl font-medium text-muted">/ {km(week.planned_m)} km</span>
+          </>
+        )}
       </p>
-      <p className="mt-2 text-muted">{note}</p>
+      <p className="mt-2 text-muted">{line}</p>
     </section>
+  );
+}
+
+/** Previous or next week, or an empty space of the same size at the ends of the plan. */
+function PageLink({ start, label, path }: { start?: string; label: string; path: string }) {
+  if (!start) return <span className="size-11" />;
+  return (
+    <Link href={weekHref(start)} aria-label={label} className={ICON_BUTTON}>
+      <svg
+        aria-hidden="true"
+        className="size-5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d={path} />
+      </svg>
+    </Link>
   );
 }
