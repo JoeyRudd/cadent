@@ -31,7 +31,7 @@ export function GarminConnect({ account }: { account?: { name?: string } }) {
           <button
             type="submit"
             disabled={disconnecting}
-            className="h-12 w-full rounded-button border border-line text-base font-semibold text-ink disabled:opacity-50"
+            className="h-12 w-full rounded-button border border-line text-base font-semibold text-ink active:opacity-70 disabled:opacity-50"
           >
             {disconnecting ? "Disconnecting…" : "Disconnect"}
           </button>

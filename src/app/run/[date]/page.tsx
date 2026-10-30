@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
+import { BackLink } from "@/components/BackLink";
 import { CheckIn } from "@/components/CheckIn";
 import { MoveRun } from "@/components/MoveRun";
 import { ICON_BUTTON } from "@/components/iconButton";
@@ -33,10 +33,29 @@ import { moveRunFor, saveCheckInFor } from "./actions";
 export default function RunPage({ params, searchParams }: PageProps<"/run/[date]">) {
   return (
     <main className="mx-auto max-w-md px-5 py-7">
-      <Suspense>
+      <Suspense fallback={<DetailPlaceholder />}>
         <Detail params={params} searchParams={searchParams} />
       </Suspense>
     </main>
+  );
+}
+
+/** Empty blocks the size of the header, banner, tiles and charts, so the page doesn't jump when the run streams in. */
+function DetailPlaceholder() {
+  return (
+    <div aria-hidden="true">
+      <div className="h-11" />
+      <div className="mt-4 space-y-3">
+        <div className="h-20 rounded-card bg-surface" />
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className="h-28 rounded-card bg-surface" />
+          <div className="h-28 rounded-card bg-surface" />
+          <div className="h-28 rounded-card bg-surface" />
+          <div className="h-28 rounded-card bg-surface" />
+        </div>
+        <div className="h-64 rounded-card bg-surface" />
+      </div>
+    </div>
   );
 }
 
@@ -74,7 +93,7 @@ async function Detail({
   return (
     <>
       <header className="flex items-center gap-3">
-        <Link href={back} aria-label="Back" className={ICON_BUTTON}>
+        <BackLink href={back} label="Back" className={ICON_BUTTON}>
           <svg
             aria-hidden="true"
             className="size-5"
@@ -87,7 +106,7 @@ async function Detail({
           >
             <path d="M15 6l-6 6 6 6" />
           </svg>
-        </Link>
+        </BackLink>
         <div>
           <h1 className="text-xl font-bold">{run ? runTypeLabel(run.type) : "Run"}</h1>
           <p className="text-sm text-muted">{shortDayLabel(date)}</p>

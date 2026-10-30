@@ -29,6 +29,20 @@
   --radius-button: 14px;
 }
 
+/* The room the home indicator or notch takes, used by the tab bar and what sits above it. */
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Clear of the tab bar: its 5rem height plus the safe area. */
+@utility pb-tabbar {
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+}
+
+@utility bottom-tabbar {
+  bottom: calc(5rem + env(safe-area-inset-bottom));
+}
+
 /* Follow the device unless Settings picked one (data-theme, set before paint in layout.tsx). */
 :root {
   color-scheme: light dark;
@@ -40,6 +54,12 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
+}
+
+/* Taps respond at once: no double-tap-zoom wait, and our own pressed states instead of the grey flash. */
+html {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {

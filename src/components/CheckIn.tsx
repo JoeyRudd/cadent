@@ -34,7 +34,7 @@ export function CheckIn({
             aria-checked={effort === n}
             aria-label={`Effort ${n} of 10`}
             onClick={() => setEffort(n)}
-            className={`h-11 rounded-lg text-sm font-semibold ${
+            className={`h-11 rounded-lg text-sm font-semibold active:opacity-70 ${
               effort === n ? "bg-accent text-on-accent" : "border border-line bg-bg text-ink"
             }`}
           >
@@ -53,7 +53,7 @@ export function CheckIn({
             role="radio"
             aria-checked={pain === false}
             onClick={() => setPain(false)}
-            className={`h-11 rounded-full px-4 text-sm font-semibold ${
+            className={`h-11 rounded-full px-4 text-sm font-semibold active:opacity-70 ${
               pain === false ? "bg-on-plan-soft text-on-plan" : "border border-line text-ink"
             }`}
           >
@@ -64,7 +64,7 @@ export function CheckIn({
             role="radio"
             aria-checked={pain === true}
             onClick={() => setPain(true)}
-            className={`h-11 rounded-full px-4 text-sm font-semibold ${
+            className={`h-11 rounded-full px-4 text-sm font-semibold active:opacity-70 ${
               pain === true ? "border border-warning text-warning" : "border border-line text-ink"
             }`}
           >

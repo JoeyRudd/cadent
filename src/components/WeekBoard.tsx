@@ -213,7 +213,7 @@ export function WeekBoard({
         <p className="mt-3 px-4 text-sm text-muted">Hold a run to move it to another day this week.</p>
       )}
 
-      <div aria-live="polite" className="fixed inset-x-0 bottom-20 px-4">
+      <div aria-live="polite" className="fixed inset-x-0 bottom-tabbar px-4">
         {(pending || toast) && (
           <div className="mx-auto flex max-w-md items-start gap-3 rounded-card border border-line bg-surface p-4 shadow-lg">
             <div className="min-w-0 flex-1">
@@ -231,7 +231,7 @@ export function WeekBoard({
               <button
                 type="button"
                 onClick={() => save(toast.undo!.from, toast.undo!.to, true)}
-                className="-my-2 h-11 rounded-button px-3 font-semibold text-accent hover:bg-accent-soft focus-visible:outline-2 focus-visible:outline-accent"
+                className="-my-2 h-11 rounded-button px-3 font-semibold text-accent hover:bg-accent-soft active:bg-accent-soft focus-visible:outline-2 focus-visible:outline-accent"
               >
                 Undo
               </button>
@@ -241,7 +241,7 @@ export function WeekBoard({
                 type="button"
                 aria-label="Dismiss"
                 onClick={() => setToast(undefined)}
-                className="-my-2 -mr-2 flex size-11 items-center justify-center rounded-full text-muted hover:bg-bg focus-visible:outline-2 focus-visible:outline-accent"
+                className="-my-2 -mr-2 flex size-11 items-center justify-center rounded-full text-muted hover:bg-bg active:bg-bg focus-visible:outline-2 focus-visible:outline-accent"
               >
                 <svg
                   aria-hidden="true"

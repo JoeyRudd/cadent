@@ -82,7 +82,7 @@ async function ShownWeek({ searchParams }: { searchParams: Promise<Record<string
             <span className="text-sm text-muted">{weeksAway(start, thisWeek)}</span>
             <Link
               href="/week"
-              className="flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-accent hover:bg-accent-soft focus-visible:outline-2 focus-visible:outline-accent"
+              className="flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-accent hover:bg-accent-soft active:bg-accent-soft focus-visible:outline-2 focus-visible:outline-accent"
             >
               Back to this week
             </Link>
