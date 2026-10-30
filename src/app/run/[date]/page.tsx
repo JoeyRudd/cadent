@@ -5,13 +5,27 @@ import { Suspense } from "react";
 
 import { CheckIn } from "@/components/CheckIn";
 import { MoveRun } from "@/components/MoveRun";
-import { activitiesBetween } from "@/lib/activities";
+import { Laps, Splits } from "@/components/Splits";
+import { LineChart } from "@/components/charts/LineChart";
+import { ZoneTime } from "@/components/charts/ZoneTime";
+import { activitiesBetween, detailsFor, type Activity, type Details } from "@/lib/activities";
 import { clock, km, pace, paceTarget, runTypeLabel, shortDayLabel, zoneLabel } from "@/lib/format";
 import { checkInOn } from "@/lib/checkins";
 import { currentPlan, moveError, moveWarnings } from "@/lib/moves";
-import { isDay, localDate, type Plan } from "@/lib/plan";
-import { runDetail, type RunDetail } from "@/lib/run";
-import { weekOf } from "@/lib/week";
+import { isDay, localDate, type Plan, type Run } from "@/lib/plan";
+import {
+  joinDetails,
+  kmSplits,
+  lapKinds,
+  paceRange,
+  paceSeries,
+  runDetail,
+  runStats,
+  zoneTime,
+  type Recorded,
+  type RunDetail,
+} from "@/lib/run";
+import { isRun, weekOf } from "@/lib/week";
 
 import { moveRunFor, saveCheckInFor } from "./actions";
 
@@ -40,7 +54,8 @@ async function Detail({ params }: { params: Promise<{ date: string }> }) {
   await connection();
   const today = localDate(new Date());
   const moved = currentPlan();
-  const detail = runDetail(moved, dayActivities(date), date, today);
+  const activities = dayActivities(date);
+  const detail = runDetail(moved, activities, date, today);
   const { run, planned_m, recorded, status, zone, hr } = detail;
   // From the distances as shown, so "5.2 km" against "5.0" always reads "+0.2".
   const gap = run && recorded ? Number(km(recorded.distance_m)) - Number(km(planned_m)) : 0;
@@ -116,6 +131,8 @@ async function Detail({ params }: { params: Promise<{ date: string }> }) {
           </div>
         )}
 
+        {recorded && <RunData details={dayDetails(activities)} plan={moved} run={run} recorded={recorded} />}
+
         {/* A recorded run stays put, unless it was moved there: then it can still go back. */}
         {run && (!recorded || run.planned_date) && (
           <MoveRun
@@ -140,6 +157,156 @@ function dayActivities(date: string) {
     console.error("Couldn't read activities", error);
     return [];
   }
+}
+
+/** The day's runs' laps and samples as one run. A database error shows the run without them. */
+function dayDetails(activities: Activity[]): Details | undefined {
+  try {
+    const runs = activities.filter(isRun);
+    const found = detailsFor(runs.map((a) => a.id));
+    const details = runs.map((a) => found.get(a.id)).filter((d) => d !== undefined);
+    return details.length > 0 ? joinDetails(details) : undefined;
+  } catch (error) {
+    console.error("Couldn't read run details", error);
+    return undefined;
+  }
+}
+
+/** Lowest and highest of `values` with `pad` either side, widened to take in `band`. */
+function domainOf(values: number[], pad: number, band?: [number, number]): [number, number] {
+  const sorted = [...values].sort((a, b) => a - b);
+  // The 5th to 95th percentile: a GPS spike or a sprint for the light shouldn't squash the rest.
+  const [lo, hi] = [sorted[Math.floor(sorted.length * 0.05)], sorted[Math.ceil(sorted.length * 0.95) - 1]];
+  return [Math.min(lo, band?.[0] ?? lo) - pad, Math.max(hi, band?.[1] ?? hi) + pad];
+}
+
+// Everything the watch recorded beyond the tiles, as one card: a quiet stats line, pace and heart rate
+// along the run, zones, then a workout's laps (its story) ahead of the kilometre splits.
+function RunData({
+  details,
+  plan,
+  run,
+  recorded,
+}: {
+  details?: Details;
+  plan: Plan;
+  run?: Run;
+  recorded: Recorded;
+}) {
+  // A treadmill run without distance has nothing to draw along.
+  if (!details || details.points.length < 2 || details.points.at(-1)!.distance_m <= 0) {
+    return (
+      <p className="rounded-card border border-line bg-surface p-4 text-sm text-muted">
+        Splits and charts show up here once Garmin sends this run&apos;s details.
+      </p>
+    );
+  }
+
+  const stats = runStats(details);
+  const splits = kmSplits(details.points);
+  const full = splits.filter((s) => s.distance_m >= 1000);
+  const fastest = full.reduce((a, b) => (b.pace_s_per_km < a.pace_s_per_km ? b : a), full[0]);
+  const paces = paceSeries(details.points);
+  const paceValues = paces.map(([, v]) => v).filter((v) => v !== null);
+  const hrs = details.points.map((p): [number, number | null] => [p.distance_m, p.hr]);
+  const hrValues = hrs.map(([, v]) => v).filter((v) => v !== null);
+  const hrBand = run?.zone ? plan.zones[run.zone] : undefined;
+  const profile = details.points.flatMap((p): [number, number][] => (p.elev_m === null ? [] : [[p.distance_m, p.elev_m]]));
+
+  // The run's own pace target if it has one; for a workout, its reps' pace (shaded on the chart and the laps).
+  const runBand = run?.pace_s_per_km !== undefined ? paceRange(run.pace_s_per_km) : undefined;
+  const reps = run?.blocks?.find((b) => b.pace_s_per_km);
+  const repBand = reps?.pace_s_per_km && paceRange(reps.pace_s_per_km);
+  const chartBand = runBand ?? repBand;
+  const paceNote = runBand
+    ? `Shaded: plan ${paceTarget(run!.pace_s_per_km!)}. Elevation underneath.`
+    : repBand
+      ? `Shaded: ${reps!.label} reps ${paceTarget(reps!.pace_s_per_km!)}. Elevation underneath.`
+      : "No pace target in the plan for this run. Elevation underneath.";
+  const kinds = lapKinds(details.laps);
+
+  return (
+    <section aria-labelledby="watch" className="rounded-card border border-line bg-surface p-4">
+      <h2 id="watch" className="text-lg font-bold">
+        From your watch
+      </h2>
+      <p className="mt-1 text-sm text-muted">
+        {[
+          stats.max_hr !== undefined && `Max HR ${stats.max_hr} bpm`,
+          stats.climb_m !== undefined && `Climb ${stats.climb_m} m`,
+          stats.cadence_spm !== undefined && `Cadence ${stats.cadence_spm} spm`,
+        ]
+          .filter(Boolean)
+          .join(" · ")}
+      </p>
+
+      <div className="mt-2 divide-y divide-line">
+        {paceValues.length > 1 && recorded.pace_s_per_km !== null && (
+          <Part title="Pace" note={paceNote}>
+            <LineChart
+              kind="pace"
+              label={`Pace along ${km(details.points.at(-1)!.distance_m)} km${
+                fastest ? `, fastest kilometre ${fastest.km} at ${pace(fastest.pace_s_per_km)} per km` : ""
+              }.`}
+              average={recorded.pace_s_per_km}
+              series={paces}
+              domain={domainOf(paceValues, 15, chartBand)}
+              band={chartBand}
+              profile={profile}
+            />
+          </Part>
+        )}
+
+        {hrValues.length > 1 && recorded.avg_hr !== null && (
+          <Part
+            title="Heart rate"
+            note={hrBand && run?.zone ? `Shaded: ${zoneLabel(run.zone)} ${hrBand[0]}–${hrBand[1]}` : undefined}
+          >
+            <LineChart
+              kind="hr"
+              label={`Heart rate from ${Math.min(...hrValues)} to ${Math.max(...hrValues)} bpm.`}
+              average={recorded.avg_hr}
+              series={hrs}
+              domain={domainOf(hrValues, 5, hrBand)}
+              band={hrBand}
+            />
+            <div className="mt-4">
+              <ZoneTime bands={zoneTime(details.points, plan.zones)} planned={run?.zone} />
+            </div>
+          </Part>
+        )}
+
+        {details.laps.length > 1 && (
+          <Part title="Laps" note={kinds ? "Named from their pace" : "As your watch recorded them"}>
+            <Laps laps={details.laps} kinds={kinds} target={repBand} />
+          </Part>
+        )}
+
+        {splits.length > 0 && (
+          <Part
+            title="Splits"
+            note={`${runBand ? "Longer bar is faster, green on target" : "Longer bar is faster"}${
+              fastest ? `. Fastest: km ${fastest.km}, ${pace(fastest.pace_s_per_km)}` : ""
+            }`}
+          >
+            <Splits splits={splits} target={runBand} />
+          </Part>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function Part({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {
+  return (
+    <section className="py-4 last:pb-0">
+      <div className="mb-3">
+        <h3 className="font-semibold">{title}</h3>
+        {note && <p className="text-xs text-muted">{note}</p>}
+      </div>
+      {children}
+    </section>
+  );
 }
 
 /** Monday to Sunday of the run's week; a day is free when the run on `date` could move there. */

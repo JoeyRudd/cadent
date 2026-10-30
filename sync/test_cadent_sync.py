@@ -11,8 +11,11 @@ from cadent_sync import (
     fetch_wellness,
     is_run,
     main,
+    missing_details,
     save,
+    save_details,
     save_wellness,
+    to_details_row,
     to_row,
     to_wellness_row,
 )
@@ -76,6 +79,61 @@ def test_save_updates_an_edited_activity():
     save(conn, [activity()])
     save(conn, [activity(distance=10000.4)])
     assert conn.execute("SELECT distance_m FROM activities").fetchall() == [(10000,)]
+
+
+SPLITS = {
+    "lapDTOs": [
+        {
+            "distance": 1000.4,
+            "duration": 372.9,
+            "movingDuration": 370.2,
+            "averageHR": 147.6,
+            "maxHR": 155.0,
+            "elevationGain": 4.4,
+            "averageRunCadence": 171.8,
+        },
+        {"distance": 512.0, "duration": 190.0},
+    ]
+}
+
+DETAILS = {
+    "metricDescriptors": [
+        {"metricsIndex": 0, "key": "sumDuration"},
+        {"metricsIndex": 1, "key": "sumDistance"},
+        {"metricsIndex": 2, "key": "directHeartRate"},
+        {"metricsIndex": 3, "key": "directSpeed"},
+        {"metricsIndex": 4, "key": "directElevation"},
+    ],
+    "activityDetailMetrics": [
+        {"metrics": [0.0, None, 98.0, 0.0, 80.0]},
+        {"metrics": [5.2, 13.6, 121.0, 2.714, 80.04]},
+        {"metrics": [10.0, 27.9, None, None, None]},
+    ],
+}
+
+
+def test_to_details_row_keeps_laps_and_samples_with_a_distance():
+    row = to_details_row("21234567890", SPLITS, DETAILS)
+    assert row["activity_id"] == "21234567890"
+    assert json.loads(row["laps"]) == [
+        [1000, 370, 148, 155, 4, 172],
+        [512, 190, None, None, None, None],
+    ]
+    assert json.loads(row["points"]) == [[5, 14, 121, 2.71, 80.0], [10, 28, None, None, None]]
+
+
+def test_to_details_row_allows_a_run_garmin_has_no_details_for():
+    row = to_details_row("1", None, None)
+    assert (row["laps"], row["points"]) == ("[]", "[]")
+
+
+def test_missing_details_skips_runs_already_fetched_and_non_runs():
+    conn = sqlite3.connect(":memory:")
+    first, second = activity(activityId=1), activity(activityId=2)
+    ride = activity(activityId=3, activityType={"typeKey": "cycling"})
+    assert missing_details(conn, [first, second, ride]) == ["1", "2"]
+    save_details(conn, to_details_row("1", SPLITS, DETAILS))
+    assert missing_details(conn, [first, second, ride]) == ["2"]
 
 
 def test_to_wellness_row_maps_garmin_fields():

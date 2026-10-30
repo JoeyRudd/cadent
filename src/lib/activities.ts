@@ -47,3 +47,65 @@ export function activitiesBetween(from: string, to: string, file = dbPath()): Ac
     file,
   );
 }
+
+/** One Garmin lap (usually 1 km, or a workout step); null when the watch didn't record it. */
+export type Lap = {
+  distance_m: number;
+  duration_s: number;
+  avg_hr: number | null;
+  max_hr: number | null;
+  elev_gain_m: number | null;
+  cadence_spm: number | null;
+};
+
+/** One sample along the run. */
+export type Point = {
+  t_s: number;
+  distance_m: number;
+  hr: number | null;
+  speed_m_s: number | null;
+  elev_m: number | null;
+};
+
+export type Details = { laps: Lap[]; points: Point[] };
+
+type Row = { activity_id: string; laps: string; points: string };
+
+/** Laps and samples for each id the sync has fetched them for, keyed by activity id. */
+export function detailsFor(ids: string[], file = dbPath()): Map<string, Details> {
+  if (ids.length === 0) return new Map();
+  return readTable(
+    "details",
+    new Map(),
+    (db) => {
+      const rows = db
+        .prepare(`SELECT activity_id, laps, points FROM details WHERE activity_id IN (${ids.map(() => "?").join(", ")})`)
+        .all(...ids) as Row[];
+      return new Map(
+        rows.map((row) => [
+          row.activity_id,
+          {
+            laps: (JSON.parse(row.laps) as number[][]).map(
+              ([distance_m, duration_s, avg_hr, max_hr, elev_gain_m, cadence_spm]) => ({
+                distance_m,
+                duration_s,
+                avg_hr,
+                max_hr,
+                elev_gain_m,
+                cadence_spm,
+              }),
+            ),
+            points: (JSON.parse(row.points) as number[][]).map(([t_s, distance_m, hr, speed_m_s, elev_m]) => ({
+              t_s,
+              distance_m,
+              hr,
+              speed_m_s,
+              elev_m,
+            })),
+          },
+        ]),
+      );
+    },
+    file,
+  );
+}
