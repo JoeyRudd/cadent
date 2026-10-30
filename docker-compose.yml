@@ -12,6 +12,9 @@ services:
       CADENT_DB: ${CADENT_DB:-/app/data/cadent.db}
       GARMINTOKENS: ${GARMINTOKENS:-/app/data/garmin-tokens}
       CADENT_OWNER: ${CADENT_OWNER:-}
+      # The Claude connector (docs/home-server.md): off while either is empty.
+      CADENT_URL: ${CADENT_URL:-}
+      CADENT_PUBLIC_URL: ${CADENT_PUBLIC_URL:-}
     restart: unless-stopped
 
 volumes:

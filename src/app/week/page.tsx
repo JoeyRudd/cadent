@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 
 import { moveRun } from "@/app/run/[date]/actions";
+import { AskClaude } from "@/components/AskClaude";
 import { ICON_BUTTON } from "@/components/iconButton";
 import { Stat } from "@/components/Stat";
 import { WeekBoard } from "@/components/WeekBoard";
@@ -10,6 +11,7 @@ import { WeekPicker } from "@/components/WeekPicker";
 import { activitiesBetween } from "@/lib/activities";
 import { hoursMinutes, km, pace, shortDate, weekProgress, weeksAway } from "@/lib/format";
 import { currentPlan, moveTargets } from "@/lib/moves";
+import { connectorUrls } from "@/lib/oauth";
 import { localDate, type Plan } from "@/lib/plan";
 import { addDays, dayParam, mondayOf, neighbourWeeks, planTotals, weekBounds, weekOf, type Week } from "@/lib/week";
 
@@ -92,7 +94,16 @@ async function ShownWeek({ searchParams }: { searchParams: Promise<Record<string
 
       <WeekPicker weeks={totals} shown={start} thisWeek={thisWeek} />
       {week ? (
-        <Summary week={week} today={today} previous={previous} />
+        <>
+          <Summary week={week} today={today} previous={previous} />
+          {connectorUrls() && (
+            <div className="mt-4">
+              <AskClaude
+                question={`Using Cadent, look at my training week of ${week.start}. How is it going, and should I change anything in it?`}
+              />
+            </div>
+          )}
+        </>
       ) : (
         <p className="mt-4 rounded-card bg-surface p-6 text-muted">
           No plan this week. The plan runs {shortDate(plan.weeks[0].start)} to {shortDate(plan.race.date)}.

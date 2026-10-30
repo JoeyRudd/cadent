@@ -3,9 +3,11 @@ import { Suspense } from "react";
 
 import { AppearancePicker } from "@/components/AppearancePicker";
 import { BackLink } from "@/components/BackLink";
+import { ClaudeConnect } from "@/components/ClaudeConnect";
 import { GarminConnect } from "@/components/GarminConnect";
 import { ICON_BUTTON } from "@/components/iconButton";
 import { garminAccount } from "@/lib/garmin";
+import { claudeConnected, connectorUrls } from "@/lib/oauth";
 
 export default function Settings() {
   return (
@@ -39,6 +41,10 @@ export default function Settings() {
       <Suspense fallback={<div aria-hidden="true" className="mt-4 h-48 rounded-card bg-surface" />}>
         <Garmin />
       </Suspense>
+
+      <Suspense fallback={<div aria-hidden="true" className="mt-4 h-32 rounded-card bg-surface" />}>
+        <Claude />
+      </Suspense>
     </main>
   );
 }
@@ -49,4 +55,16 @@ async function Garmin() {
   const account = garminAccount();
   // Keyed so connecting or disconnecting starts the form fresh.
   return <GarminConnect key={account ? "connected" : "disconnected"} account={account} />;
+}
+
+// Reads the environment and saved tokens, so it renders per request instead of at build time.
+async function Claude() {
+  await connection();
+  let connected = false;
+  try {
+    connected = claudeConnected();
+  } catch (error) {
+    console.error("Couldn't read Claude's connection", error);
+  }
+  return <ClaudeConnect mcpUrl={connectorUrls()?.mcp} connected={connected} />;
 }

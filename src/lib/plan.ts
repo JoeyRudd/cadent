@@ -32,6 +32,8 @@ export type Run = {
   blocks?: Block[];
   /** Set by withMoves (moves.ts) on a run moved off the day the plan gave it. */
   planned_date?: string;
+  /** Set by withChanges (changes.ts) on a run Claude made longer or shorter: the plan's own distance. */
+  planned_distance_m?: number;
 };
 
 export type Lift = {
@@ -74,6 +76,11 @@ function allSessions(plan: Plan): Session[] {
 
 export function sessionsOn(plan: Plan, day: string): Session[] {
   return allSessions(plan).filter((s) => s.date === day);
+}
+
+/** The first run on `day`, if the plan has one. */
+export function runOn(plan: Plan, day: string): Run | undefined {
+  return sessionsOn(plan, day).find((s): s is Run => s.kind === "run");
 }
 
 /** The first run after `day`, if the plan has one. */

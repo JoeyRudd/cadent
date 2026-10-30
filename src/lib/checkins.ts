@@ -1,11 +1,7 @@
 // How each run felt, saved from the run detail screen: the app's only write to the database.
 // Server-only. One check-in per day; saving again replaces it.
 
-import { mkdirSync } from "node:fs";
-import path from "node:path";
-import { DatabaseSync } from "node:sqlite";
-
-import { dbPath, readTable } from "./activities";
+import { dbPath, readTable, writeTable } from "./activities";
 import { isDay } from "./plan";
 
 export type CheckIn = {
@@ -51,16 +47,15 @@ export function checkInOn(date: string, file = dbPath()): CheckIn | undefined {
 
 /** Saves the day's check-in, replacing any earlier one. Creates the file and table on first use. */
 export function saveCheckIn({ date, effort, pain }: CheckIn, file = dbPath()): void {
-  mkdirSync(/*turbopackIgnore: true*/ path.dirname(file), { recursive: true });
-  // timeout: the sync writes its own tables at 6am; wait for its lock rather than fail the save.
-  const db = new DatabaseSync(/*turbopackIgnore: true*/ file, { timeout: 5000 });
-  try {
-    db.exec(SCHEMA);
-    db.prepare(
-      `INSERT INTO checkins (date, effort, pain, saved_at) VALUES (?, ?, ?, ?)
-       ON CONFLICT(date) DO UPDATE SET effort = excluded.effort, pain = excluded.pain, saved_at = excluded.saved_at`,
-    ).run(date, effort, pain ? 1 : 0, new Date().toISOString());
-  } finally {
-    db.close();
-  }
+  writeTable(
+    SCHEMA,
+    (db) =>
+      db
+        .prepare(
+          `INSERT INTO checkins (date, effort, pain, saved_at) VALUES (?, ?, ?, ?)
+           ON CONFLICT(date) DO UPDATE SET effort = excluded.effort, pain = excluded.pain, saved_at = excluded.saved_at`,
+        )
+        .run(date, effort, pain ? 1 : 0, new Date().toISOString()),
+    file,
+  );
 }

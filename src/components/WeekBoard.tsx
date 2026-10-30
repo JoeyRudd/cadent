@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useOptimistic, useRef, useState, useTransition, type PointerEvent, type ReactNode } from "react";
 
-import type { MoveResult } from "@/app/run/[date]/actions";
+import type { MoveResult } from "@/lib/moves";
 import { weekday } from "@/lib/format";
 import type { WeekDay } from "@/lib/week";
 

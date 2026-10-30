@@ -10,3 +10,7 @@ export const ICON_BUTTON =
 // The full-width accent button that finishes a card's form or leads to its next step.
 export const PRIMARY_BUTTON =
   "h-12 rounded-button bg-accent text-base font-semibold text-on-accent active:opacity-80 disabled:opacity-50";
+
+// The full-width outlined button for the quieter choice beside a primary one (Disconnect, Cancel).
+export const SECONDARY_BUTTON =
+  "flex h-12 items-center justify-center rounded-button border border-line text-base font-semibold text-ink active:opacity-70 disabled:opacity-50";
