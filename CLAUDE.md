@@ -9,6 +9,7 @@ syncs Garmin. One user, hosted at home.
 ## Commands
 
 - `pnpm dev`: run the app.
+- `pnpm fresh`: stop anything on ports 3000–3009, start the app and open it in the browser.
 - `pnpm check`: lint + typecheck. Run before saying you're done.
 
 ## Layout

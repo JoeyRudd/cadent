@@ -1,18 +1,32 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
+import { Suspense } from "react";
 
+import { activitiesBetween } from "@/lib/activities";
+import { checkPlan, historyRange } from "@/lib/check";
 import { dayLabel } from "@/lib/format";
-import { plan, type Run } from "@/lib/plan";
-import { validate, type Finding } from "@/lib/rules";
+import { plan } from "@/lib/plan";
+import type { Finding } from "@/lib/rules";
 
 export const metadata: Metadata = { title: "Plan check · Cadent" };
 
 type WeekFindings = { index: number; start: string; findings: Finding[] };
 
-// The plan only changes on redeploy, so this is checked once at build time.
-// No Garmin history yet: the plan's runs are checked against each other.
 export default function Check() {
-  const runs = plan.weeks.flatMap((week) => week.sessions).filter((s): s is Run => s.kind === "run");
-  const findings = validate(runs, []);
+  return (
+    <main className="mx-auto max-w-md px-4 py-8">
+      <Suspense>
+        <Findings />
+      </Suspense>
+    </main>
+  );
+}
+
+// Reads Garmin history from the database, so it renders per request instead of at build time.
+async function Findings() {
+  await connection();
+  const { from, to } = historyRange(plan);
+  const findings = checkPlan(plan, activitiesBetween(from, to));
   const weeks = plan.weeks
     .map((week) => {
       const days = new Set(week.sessions.map((s) => s.date));
@@ -21,7 +35,7 @@ export default function Check() {
     .filter((week) => week.findings.length > 0);
 
   return (
-    <main className="mx-auto max-w-md px-4 py-8">
+    <>
       <p className="text-muted">Plan check</p>
       <h1 className="mt-1 text-2xl font-semibold">{plan.name}</h1>
 
@@ -31,7 +45,7 @@ export default function Check() {
           <Week key={week.index} week={week} />
         ))}
       </div>
-    </main>
+    </>
   );
 }
 
