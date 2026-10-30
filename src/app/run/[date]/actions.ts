@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { parseCheckIn, saveCheckIn, type CheckInState } from "@/lib/checkins";
+import { savedLiftDays, withLifts } from "@/lib/lifts";
 import { moveError, moveWarnings, saveMove, savedMoves, withMoves } from "@/lib/moves";
 import { plan, sessionsOn, type Run } from "@/lib/plan";
 
@@ -28,7 +29,8 @@ export async function moveRun(from: string, to: string): Promise<MoveResult> {
   try {
     // savedMoves, not currentPlan: a read error should fail the move, not check it against the plan as written.
     const moves = savedMoves();
-    const moved = withMoves(plan, moves);
+    const lifts = savedLiftDays();
+    const moved = withLifts(withMoves(plan, moves), lifts);
     const error = moveError(moved, from, to);
     if (error) return { error };
     const run = sessionsOn(moved, from).find((s): s is Run => s.kind === "run");
@@ -37,7 +39,7 @@ export async function moveRun(from: string, to: string): Promise<MoveResult> {
     saveMove(planned, to);
     refresh();
     // A move back onto the planned day is ignored by withMoves, the same as the deleted row.
-    return { warnings: moveWarnings(withMoves(plan, { ...moves, [planned]: to }), to) };
+    return { warnings: moveWarnings(withLifts(withMoves(plan, { ...moves, [planned]: to }), lifts), to) };
   } catch (error) {
     console.error("Couldn't move run", error);
     return { error: "Couldn't move the run. Try again in a moment." };
