@@ -30,9 +30,10 @@ function niceTicks(lo: number, hi: number, step: number): number[] {
 }
 
 /**
- * A value along the run's distance: pace (faster at the top) or heart rate. Drag a finger or use the
- * arrow keys to read the value at any point. `band` shades the plan's target; `profile` draws the
- * elevation underneath, quietly, on the same distance axis.
+ * A value along the run's distance: pace (faster at the top) or heart rate. Drag a finger, hover a
+ * mouse, or use the arrow keys (Home/End for the ends, Escape for the average) to read any point.
+ * `band` shades the plan's target; `profile` draws the elevation underneath, quietly, on the same
+ * distance axis.
  */
 export function LineChart({
   kind,
@@ -98,21 +99,32 @@ export function LineChart({
       </p>
       <svg
         role="img"
-        aria-label={`${label} Use the arrow keys or drag to read a point.`}
+        aria-label={`${label} Use the arrow keys, Home and End, or drag to read a point.`}
         tabIndex={0}
         viewBox={`0 0 ${W} ${H}`}
-        className="mt-1 w-full touch-pan-y select-none rounded-button outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent"
+        className="mt-1 w-full cursor-crosshair touch-pan-y select-none rounded-button outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent"
         onPointerDown={(e) => {
           // Keep the drag while the finger strays off the chart.
           e.currentTarget.setPointerCapture(e.pointerId);
           pick(e.clientX, e.currentTarget.getBoundingClientRect());
         }}
-        onPointerMove={(e) => e.buttons > 0 && pick(e.clientX, e.currentTarget.getBoundingClientRect())}
+        onPointerMove={(e) => {
+          // A mouse reads on hover; a finger or pen only while pressed.
+          if (e.pointerType === "mouse" || e.buttons > 0) pick(e.clientX, e.currentTarget.getBoundingClientRect());
+        }}
+        // A finger's last point stays after lifting; a mouse leaving returns to the average.
+        onPointerLeave={(e) => e.pointerType === "mouse" && setAt(undefined)}
         onKeyDown={(e) => {
-          const step = { ArrowRight: KEY_STEP_M, ArrowLeft: -KEY_STEP_M }[e.key];
-          if (step === undefined) return;
+          if (e.key === "Escape") return setAt(undefined);
+          const next = {
+            ArrowRight: (d = 0) => d + KEY_STEP_M,
+            ArrowLeft: (d = 0) => d - KEY_STEP_M,
+            Home: () => 0,
+            End: () => distance,
+          }[e.key];
+          if (next === undefined) return;
           e.preventDefault();
-          setAt((d) => Math.min(distance, Math.max(0, (d ?? 0) + step)));
+          setAt((d) => Math.min(distance, Math.max(0, next(d))));
         }}
       >
         {band && (
