@@ -19,6 +19,7 @@ export type WeekDay = {
 
 export type Week = {
   index: number;
+  cutback: boolean;
   start: string;
   end: string;
   days: WeekDay[];
@@ -60,8 +61,29 @@ export function weekBounds(plan: Plan, day: string): { start: string; end: strin
 /** The plan week containing `today`, compared with `activities`, or undefined outside the plan. */
 export function weekOf(plan: Plan, activities: Activity[], today: string): Week | undefined {
   const week = planWeek(plan, today);
-  if (!week) return undefined;
+  return week && buildWeek(week, activities, today);
+}
 
+/** Every plan week, compared with `activities`. */
+export function weeksOf(plan: Plan, activities: Activity[], today: string): Week[] {
+  return plan.weeks.map((week) => buildWeek(week, activities, today));
+}
+
+/** The week containing `today`, if any. */
+export function currentWeek(weeks: Week[], today: string): Week | undefined {
+  return weeks.find((w) => w.start <= today && today <= w.end);
+}
+
+/** The week asked for by index (`?w=5`), else this week, else the nearest end of the plan. */
+export function pickWeek(weeks: Week[], requested: string | string[] | undefined, today: string): Week {
+  return (
+    weeks.find((w) => String(w.index) === requested) ??
+    currentWeek(weeks, today) ??
+    (today < weeks[0].start ? weeks[0] : weeks[weeks.length - 1])
+  );
+}
+
+function buildWeek(week: Plan["weeks"][number], activities: Activity[], today: string): Week {
   const days = Array.from({ length: 7 }, (_, i): WeekDay => {
     const date = addDays(week.start, i);
     const runs = week.sessions.filter((s): s is Run => s.kind === "run" && s.date === date);
@@ -74,6 +96,7 @@ export function weekOf(plan: Plan, activities: Activity[], today: string): Week 
 
   return {
     index: week.index,
+    cutback: week.cutback,
     start: week.start,
     end: addDays(week.start, 6),
     days,

@@ -23,6 +23,7 @@ export function WeekDayRow({ day, isToday }: { day: WeekDay; isToday: boolean })
   const pill = PILLS[day.status];
   const planned = day.runs.map((run) => `${runTypeLabel(run.type)} ${km(run.distance_m)} km`).join(" + ");
   const detail = note(day);
+  const actual = day.actual_m > 0 ? `${km(day.actual_m)} km` : day.status === "upcoming" ? undefined : "–";
 
   return (
     <li className={`flex items-center gap-3 px-4 py-3 ${isToday ? "bg-accent-soft text-accent-ink" : ""}`}>
@@ -32,7 +33,8 @@ export function WeekDayRow({ day, isToday }: { day: WeekDay; isToday: boolean })
         {detail && <p className={`text-sm ${isToday ? "" : "text-muted"}`}>{detail}</p>}
       </div>
       <div className="text-right">
-        <p className="font-semibold">{day.actual_m > 0 ? `${km(day.actual_m)} km` : "–"}</p>
+        {/* Nothing run yet on a day still to come, so no dash either. */}
+        {actual && <p className="font-semibold">{actual}</p>}
         {pill && (
           <p
             className={`mt-1 rounded-full px-2 text-xs font-medium ${

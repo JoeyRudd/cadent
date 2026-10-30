@@ -6,7 +6,7 @@ import { afterAll, describe, expect, it } from "vitest";
 
 import { activitiesBetween, type Activity } from "./activities";
 import type { Plan } from "./plan";
-import { dayStatus, weekBounds, weekOf } from "./week";
+import { currentWeek, dayStatus, pickWeek, weekBounds, weekOf, weeksOf } from "./week";
 
 // One week, so editing data/plan.json never breaks these tests.
 const plan: Plan = {
@@ -102,6 +102,46 @@ describe("weekOf", () => {
 
   it("is undefined outside the plan", () => {
     expect(weekOf(plan, activities, "2026-11-02")).toBeUndefined();
+  });
+});
+
+describe("weeksOf", () => {
+  const twoWeeks: Plan = {
+    ...plan,
+    weeks: [plan.weeks[0], { index: 2, start: "2026-11-02", cutback: true, sessions: [] }],
+  };
+
+  it("compares past and future weeks with today", () => {
+    const [past] = weeksOf(plan, [activity("2026-10-27", 5000)], "2026-11-05");
+    expect(past.days.map((d) => d.status)).toEqual(["rest", "done", "missed", "rest", "missed", "rest", "missed"]);
+    const [future] = weeksOf(plan, [], "2026-10-20");
+    expect(future.days.map((d) => d.status)).toEqual(["rest", "upcoming", "upcoming", "rest", "upcoming", "rest", "upcoming"]);
+  });
+
+  it("finds this week", () => {
+    const weeks = weeksOf(twoWeeks, [], "2026-11-03");
+    expect(currentWeek(weeks, "2026-11-03")?.index).toBe(2);
+    expect(currentWeek(weeks, "2026-12-01")).toBeUndefined();
+  });
+
+  describe("pickWeek", () => {
+    const weeks = weeksOf(twoWeeks, [], "2026-10-28");
+
+    it("picks the week asked for", () => {
+      expect(pickWeek(weeks, "2", "2026-10-28").index).toBe(2);
+      expect(weeks[1].cutback).toBe(true);
+    });
+
+    it("falls back to this week for a missing or unknown index", () => {
+      expect(pickWeek(weeks, undefined, "2026-10-28").index).toBe(1);
+      expect(pickWeek(weeks, ["2", "1"], "2026-10-28").index).toBe(1);
+      expect(pickWeek(weeks, "9", "2026-11-03").index).toBe(2);
+    });
+
+    it("falls back to the nearest end outside the plan", () => {
+      expect(pickWeek(weeks, undefined, "2026-10-01").index).toBe(1);
+      expect(pickWeek(weeks, undefined, "2026-12-01").index).toBe(2);
+    });
   });
 });
 
