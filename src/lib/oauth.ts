@@ -11,6 +11,14 @@ import { dbPath, readTable, writeTable } from "./activities";
 /** Claude's OAuth callbacks: claude.ai today, claude.com later (Anthropic's custom connector docs). */
 const CLAUDE_CALLBACKS = ["https://claude.ai/api/mcp/auth_callback", "https://claude.com/api/mcp/auth_callback"];
 
+/** Claude Code's callback, on this machine: accepted under `next dev` only, to try the connector without Funnel. */
+const LOCAL_CALLBACK = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/[^\s]*$/;
+
+/** Whether `uri` may receive codes: Claude's callbacks, and in development a localhost one. */
+function allowedCallback(uri: unknown, dev = process.env.NODE_ENV === "development"): boolean {
+  return typeof uri === "string" && (CLAUDE_CALLBACKS.includes(uri) || (dev && LOCAL_CALLBACK.test(uri)));
+}
+
 const CODE_MS = 5 * 60_000;
 /** Registration is open to the internet, so unused clients expire and only a few may wait at once. */
 const UNUSED_CLIENT_MS = 24 * 60 * 60_000;
@@ -75,10 +83,10 @@ function prune(db: DatabaseSync): void {
 type Client = { client_id: string; name: string; redirect_uris: string[] };
 
 /** Registers a client (RFC 7591). Only Claude's callbacks are accepted, so no one else can be sent a code. */
-export function registerClient(body: unknown, file = dbPath()): (Client & { client_id_issued_at: number }) | OAuthError {
+export function registerClient(body: unknown, file = dbPath(), dev?: boolean): (Client & { client_id_issued_at: number }) | OAuthError {
   const meta = (body ?? {}) as { client_name?: unknown; redirect_uris?: unknown };
   const uris = meta.redirect_uris;
-  if (!Array.isArray(uris) || uris.length === 0 || !uris.every((u) => CLAUDE_CALLBACKS.includes(u))) {
+  if (!Array.isArray(uris) || uris.length === 0 || !uris.every((u) => allowedCallback(u, dev))) {
     return fail("invalid_redirect_uri", "Only Claude's connector callback can be registered.");
   }
   const client: Client = {

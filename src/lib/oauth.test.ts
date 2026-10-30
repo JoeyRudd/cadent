@@ -46,6 +46,14 @@ describe("registerClient", () => {
     expect(register(file).redirect_uris).toEqual([CALLBACK]);
   });
 
+  it("accepts a localhost callback in development only", () => {
+    const file = fresh();
+    const local = { redirect_uris: ["http://localhost:54321/callback"] };
+    expect(registerClient(local, file, false)).toMatchObject({ error: "invalid_redirect_uri" });
+    expect(registerClient(local, file, true)).toHaveProperty("client_id");
+    expect(registerClient({ redirect_uris: ["http://localhost.evil.example/cb"] }, file, true)).toMatchObject({ error: "invalid_redirect_uri" });
+  });
+
   it("stops registering once 20 clients are waiting", () => {
     const file = fresh();
     for (let i = 0; i < 20; i++) register(file);
