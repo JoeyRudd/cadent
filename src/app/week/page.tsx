@@ -3,10 +3,13 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 
 import { moveRun } from "@/app/run/[date]/actions";
+import { toggleLiftDay } from "@/app/week/actions";
 import { ICON_BUTTON } from "@/components/iconButton";
+import { LiftDays } from "@/components/LiftDays";
 import { WeekBoard } from "@/components/WeekBoard";
 import { activitiesBetween } from "@/lib/activities";
 import { km } from "@/lib/format";
+import { LIFT_NAMES } from "@/lib/lifts";
 import { currentPlan, moveTargets } from "@/lib/moves";
 import { localDate, type Plan } from "@/lib/plan";
 import { addDays, dayParam, mondayOf, neighbourWeeks, planTotals, weekBounds, weekOf, type Week } from "@/lib/week";
@@ -46,52 +49,60 @@ async function ShownWeek({ searchParams }: { searchParams: Promise<Record<string
 
   const header = (
     <>
-      <header className="flex items-center gap-2">
-        <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-2 text-muted">
-            {week ? `Week ${week.index}` : "No plan"}
-            {/* A pill, so it reads as a way back rather than a label for the week shown. */}
-            {start !== thisWeek && (
-              <Link
-                href="/week"
-                className="-my-2.5 rounded-full bg-accent-soft px-3 py-0.5 text-sm font-medium text-accent-ink outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent"
-              >
-                This week
-              </Link>
-            )}
-          </p>
-          <h1 className="text-2xl font-semibold">
-            {shortDate(start)} to {shortDate(addDays(start, 6))}
-          </h1>
-        </div>
-        <PageLink start={prev} label="Previous week" path="M15 6l-6 6 6 6" />
-        <PageLink start={next} label="Next week" path="M9 6l6 6-6 6" />
-      </header>
+        <header className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <p className="flex items-center gap-2 text-muted">
+              {week ? `Week ${week.index}` : "No plan"}
+              {/* A pill, so it reads as a way back rather than a label for the week shown. */}
+              {start !== thisWeek && (
+                <Link
+                  href="/week"
+                  className="-my-2.5 rounded-full bg-accent-soft px-3 py-0.5 text-sm font-medium text-accent-ink outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent"
+                >
+                  This week
+                </Link>
+              )}
+            </p>
+            <h1 className="text-2xl font-semibold">
+              {shortDate(start)} to {shortDate(addDays(start, 6))}
+            </h1>
+          </div>
+          <PageLink start={prev} label="Previous week" path="M15 6l-6 6 6 6" />
+          <PageLink start={next} label="Next week" path="M9 6l6 6-6 6" />
+        </header>
 
-      <PlanWeeks plan={plan} shown={start} thisWeek={thisWeek} />
-      {week ? (
-        <Summary week={week} today={today} />
-      ) : (
-        <p className="mt-6 rounded-card bg-surface p-6 text-muted">
-          No plan this week. The plan runs {shortDate(plan.weeks[0].start)} to {shortDate(plan.race.date)}.
-        </p>
-      )}
+        <PlanWeeks plan={plan} shown={start} thisWeek={thisWeek} />
+        {week ? (
+          <Summary week={week} today={today} />
+        ) : (
+          <p className="mt-6 rounded-card bg-surface p-6 text-muted">
+            No plan this week. The plan runs {shortDate(plan.weeks[0].start)} to {shortDate(plan.race.date)}.
+          </p>
+        )}
     </>
   );
 
   if (!week) return header;
   return (
-    <WeekBoard
-      key={week.start}
-      days={week.days}
-      today={today}
-      targets={movableRuns(plan, week)}
-      move={moveRun}
-      prev={prev && weekHref(prev)}
-      next={next && weekHref(next)}
-    >
-      {header}
-    </WeekBoard>
+    <>
+      <WeekBoard
+        key={week.start}
+        days={week.days}
+        today={today}
+        targets={movableRuns(plan, week)}
+        move={moveRun}
+        prev={prev && weekHref(prev)}
+        next={next && weekHref(next)}
+      >
+        {header}
+      </WeekBoard>
+      <LiftDays
+        key={`lifts-${week.start}`}
+        action={toggleLiftDay}
+        days={week.days.map((d) => ({ date: d.date, lift: d.lifts[0]?.name }))}
+        names={LIFT_NAMES}
+      />
+    </>
   );
 }
 

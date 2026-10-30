@@ -6,6 +6,7 @@ import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
 import { dbPath, readTable } from "./activities";
+import { savedLiftDays, withLifts } from "./lifts";
 import { isDay, plan, sessionsOn, type Plan, type Run } from "./plan";
 import { addDays, weekBounds } from "./week";
 
@@ -88,10 +89,10 @@ export function moveWarnings(moved: Plan, day: string): string[] {
   return warnings;
 }
 
-/** plan.json with the saved moves applied: what the pages show. A database error shows the plan as written. */
+/** plan.json with the saved moves and lift days applied: what the pages show. A database error shows the plan as written. */
 export function currentPlan(file = dbPath()): Plan {
   try {
-    return withMoves(plan, savedMoves(file));
+    return withLifts(withMoves(plan, savedMoves(file)), savedLiftDays(file));
   } catch (error) {
     console.error("Couldn't read moved runs", error);
     return plan;

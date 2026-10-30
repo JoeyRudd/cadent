@@ -14,7 +14,7 @@ const CIRCLES: Record<DayStatus, string> = {
 
 /** What goes inside a day's circle: what's planned, what was run, or a mark. */
 function circleText(day: WeekDay): string {
-  if (day.status === "rest") return "Off";
+  if (day.status === "rest") return day.lifts.length > 0 ? "Lift" : "Off";
   if (day.status === "missed") return "–";
   return km(day.status === "upcoming" ? day.planned_m : day.actual_m);
 }
@@ -55,7 +55,8 @@ export function WeekStrip({ week, today }: { week: Week; today: string }) {
               {/* Colour carries the status on screen; say it in words for screen readers. */}
               <span className="sr-only">
                 {weekday(day.date)}, {isToday ? "today, " : ""}
-                {day.status}:
+                {day.status}
+                {day.lifts.length > 0 ? ", lift" : ""}:
               </span>
               <span
                 className={`flex size-9.5 items-center justify-center rounded-full text-xs font-semibold ${
@@ -64,6 +65,8 @@ export function WeekStrip({ week, today }: { week: Week; today: string }) {
               >
                 {circleText(day)}
               </span>
+              {/* A run day's lift goes under its circle; a rest day's is in the circle itself. */}
+              {day.status !== "rest" && day.lifts.length > 0 && <span className="text-xs text-muted">Lift</span>}
             </li>
           );
         })}
