@@ -4,14 +4,20 @@ import {
   blockLabel,
   clock,
   dayLabel,
+  dayOfMonth,
   duration,
   extraLabel,
   hoursMinutes,
   km,
+  monthShort,
   pace,
   paceTarget,
+  shortDate,
+  timeAndPace,
   shortDayLabel,
+  weekProgress,
   weekday,
+  weeksAway,
   zoneLabel,
 } from "./format";
 
@@ -71,5 +77,38 @@ describe("run pills", () => {
     expect(extraLabel({ type: "strides", reps: [4, 6], duration_s: 20 })).toBe("Strides 4–6 × 20 s");
     expect(extraLabel({ type: "strides", reps: 4, duration_s: 20 })).toBe("Strides 4 × 20 s");
     expect(extraLabel({ type: "strides", duration_s: 20 })).toBe("20 s strides");
+  });
+});
+
+describe("timeAndPace", () => {
+  it("joins time and pace, or just the time without a pace", () => {
+    expect(timeAndPace(2472, 348)).toBe("41:12 · 5:48 /km");
+    expect(timeAndPace(2472, null)).toBe("41:12");
+  });
+});
+
+describe("week helpers", () => {
+  it("formats short dates", () => {
+    expect(shortDate("2026-10-26")).toBe("Oct 26");
+    expect(monthShort("2026-11-02")).toBe("Nov");
+    expect(dayOfMonth("2026-11-02")).toBe("2");
+    expect(dayOfMonth("2026-10-28")).toBe("28");
+  });
+
+  it("says where a week stands", () => {
+    const week = { start: "2026-10-26", end: "2026-11-01", planned_m: 38000, actual_m: 23400, runs_planned: 4 };
+    expect(weekProgress(week, "2026-10-29")).toBe("14.6 km to go");
+    expect(weekProgress({ ...week, actual_m: 38000 }, "2026-10-29")).toBe("Week's distance done");
+    expect(weekProgress(week, "2026-11-03")).toBe("14.6 km under plan, that's fine");
+    expect(weekProgress({ ...week, actual_m: 0 }, "2026-10-20")).toBe("Starts Mon, Oct 26");
+  });
+
+  it("says how far a week is from this one", () => {
+    const now = "2026-10-26";
+    expect(weeksAway("2026-10-26", now)).toBe("This week");
+    expect(weeksAway("2026-10-19", now)).toBe("Last week");
+    expect(weeksAway("2026-10-05", now)).toBe("3 weeks ago");
+    expect(weeksAway("2026-11-02", now)).toBe("Next week");
+    expect(weeksAway("2026-11-16", now)).toBe("In 3 weeks");
   });
 });

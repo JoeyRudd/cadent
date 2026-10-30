@@ -9,12 +9,23 @@ export const TOLERANCE = 0.1;
 
 export type DayStatus = "done" | "short" | "over" | "missed" | "upcoming" | "rest" | "extra";
 
+/** Seconds per kilometre, rounded; null when there's no distance to divide by. */
+export function paceOf(distance_m: number, duration_s: number): number | null {
+  return distance_m > 0 ? Math.round(duration_s / (distance_m / 1000)) : null;
+}
+
 export type WeekDay = {
   date: string;
   runs: Run[];
   lifts: Lift[];
   planned_m: number;
   actual_m: number;
+  /** Moving time of the day's recorded runs. */
+  duration_s: number;
+  /** Average pace of the day's runs, null when none were recorded. */
+  pace_s_per_km: number | null;
+  /** How many runs Garmin recorded that day. */
+  recorded: number;
   status: DayStatus;
 };
 
@@ -26,6 +37,11 @@ export type Week = {
   days: WeekDay[];
   planned_m: number;
   actual_m: number;
+  duration_s: number;
+  pace_s_per_km: number | null;
+  /** Planned runs, and how many of those days have a recorded run (a bonus run is not one). */
+  runs_planned: number;
+  runs_done: number;
 };
 
 /** "2026-10-26" + 6 → "2026-11-01". */
@@ -69,12 +85,24 @@ export function weekOf(plan: Plan, activities: Activity[], today: string, day = 
     const runs = week.sessions.filter((s): s is Run => s.kind === "run" && s.date === date);
     const lifts = week.sessions.filter((s): s is Lift => s.kind === "lift" && s.date === date);
     const planned_m = runs.reduce((sum, run) => sum + run.distance_m, 0);
-    const actual_m = activities
-      .filter((a) => a.date === date && isRun(a))
-      .reduce((sum, a) => sum + a.distance_m, 0);
-    return { date, runs, lifts, planned_m, actual_m, status: dayStatus(planned_m, actual_m, date, today) };
+    const recorded = activities.filter((a) => a.date === date && isRun(a));
+    const actual_m = recorded.reduce((sum, a) => sum + a.distance_m, 0);
+    const duration_s = recorded.reduce((sum, a) => sum + a.duration_s, 0);
+    return {
+      date,
+      runs,
+      lifts,
+      planned_m,
+      actual_m,
+      duration_s,
+      pace_s_per_km: paceOf(actual_m, duration_s),
+      recorded: recorded.length,
+      status: dayStatus(planned_m, actual_m, date, today),
+    };
   });
 
+  const actual_m = days.reduce((sum, d) => sum + d.actual_m, 0);
+  const duration_s = days.reduce((sum, d) => sum + d.duration_s, 0);
   return {
     index: week.index,
     cutback: week.cutback,
@@ -82,7 +110,11 @@ export function weekOf(plan: Plan, activities: Activity[], today: string, day = 
     end: addDays(week.start, 6),
     days,
     planned_m: days.reduce((sum, d) => sum + d.planned_m, 0),
-    actual_m: days.reduce((sum, d) => sum + d.actual_m, 0),
+    actual_m,
+    duration_s,
+    pace_s_per_km: paceOf(actual_m, duration_s),
+    runs_planned: days.reduce((sum, d) => sum + d.runs.length, 0),
+    runs_done: days.filter((d) => d.runs.length > 0 && d.recorded > 0).length,
   };
 }
 
@@ -106,12 +138,13 @@ export function neighbourWeeks(plan: Plan, start: string): { prev?: string; next
 export function planTotals(
   plan: Plan,
   activities: Activity[],
-): { index: number; start: string; planned_m: number; actual_m: number }[] {
+): { index: number; start: string; cutback: boolean; planned_m: number; actual_m: number }[] {
   return plan.weeks.map((w) => {
     const end = addDays(w.start, 6);
     return {
       index: w.index,
       start: w.start,
+      cutback: w.cutback,
       planned_m: w.sessions.reduce((sum, s) => sum + (s.kind === "run" ? s.distance_m : 0), 0),
       actual_m: activities
         .filter((a) => w.start <= a.date && a.date <= end && isRun(a))

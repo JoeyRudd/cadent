@@ -1,11 +1,26 @@
 import Link from "next/link";
 
 import { PRIMARY_BUTTON } from "@/components/iconButton";
-import { blockLabel, extraLabel, km, paceTarget, runTypeLabel, zoneLabel } from "@/lib/format";
-import type { Plan, Run } from "@/lib/plan";
+import { StatusPill } from "@/components/StatusPill";
+import { blockLabel, extraLabel, km, paceTarget, runTypeLabel, timeAndPace, zoneLabel } from "@/lib/format";
+import type { Lift, Plan, Run } from "@/lib/plan";
+import type { WeekDay } from "@/lib/week";
 
-// Today's run as the hero card: the distance is the number that matters.
-export function RunCard({ run, zones, week }: { run: Run; zones: Plan["zones"]; week?: number }) {
+// Today's run as the hero card: the distance is the number that matters. Once the run has synced,
+// `done` says how it went; `lift` is the day's strength session, if any.
+export function RunCard({
+  run,
+  zones,
+  week,
+  done,
+  lift,
+}: {
+  run: Run;
+  zones: Plan["zones"];
+  week?: number;
+  done?: Pick<WeekDay, "actual_m" | "duration_s" | "pace_s_per_km" | "status">;
+  lift?: Lift;
+}) {
   const range = run.zone ? zones[run.zone] : undefined;
   const pills = [
     run.zone && `${zoneLabel(run.zone)}${range ? ` · ${range[0]}–${range[1]} bpm` : ""}`,
@@ -37,6 +52,15 @@ export function RunCard({ run, zones, week }: { run: Run; zones: Plan["zones"]; 
         </ul>
       )}
 
+      {done && (
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-ink">
+          <span className="font-semibold">
+            Done: {km(done.actual_m)} km, {timeAndPace(done.duration_s, done.pace_s_per_km)}
+          </span>
+          <StatusPill status={done.status} />
+        </p>
+      )}
+
       {run.blocks && (
         <ol className="space-y-3 border-t border-accent-ink/20 pt-4">
           {run.blocks.map((block, i) => {
@@ -51,11 +75,15 @@ export function RunCard({ run, zones, week }: { run: Run; zones: Plan["zones"]; 
         </ol>
       )}
 
+      {lift && (
+        <p className="text-sm">{lift.after_run ? `Lift after: ${lift.name}` : `Lift: ${lift.name}`}</p>
+      )}
+
       <Link
         href={`/run/${run.date}`}
         className={`flex items-center justify-center ${PRIMARY_BUTTON}`}
       >
-        See session details
+        {done ? "See your run" : "See session details"}
       </Link>
     </section>
   );

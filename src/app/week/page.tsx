@@ -4,28 +4,35 @@ import { Suspense } from "react";
 
 import { moveRun } from "@/app/run/[date]/actions";
 import { ICON_BUTTON } from "@/components/iconButton";
+import { Stat } from "@/components/Stat";
 import { WeekBoard } from "@/components/WeekBoard";
 import { WeekPicker } from "@/components/WeekPicker";
 import { activitiesBetween } from "@/lib/activities";
-import { km } from "@/lib/format";
+import { hoursMinutes, km, pace, shortDate, weekProgress, weeksAway } from "@/lib/format";
 import { currentPlan, moveTargets } from "@/lib/moves";
 import { localDate, type Plan } from "@/lib/plan";
 import { addDays, dayParam, mondayOf, neighbourWeeks, planTotals, weekBounds, weekOf, type Week } from "@/lib/week";
 
 export default function WeekPage({ searchParams }: PageProps<"/week">) {
   return (
-    <main className="mx-auto max-w-md px-4 py-8">
-      <Suspense>
+    <main className="mx-auto max-w-md px-4 py-8 md:max-w-xl">
+      <Suspense fallback={<WeekPlaceholder />}>
         <ShownWeek searchParams={searchParams} />
       </Suspense>
     </main>
   );
 }
 
-/** "2026-10-26" → "Oct 26". Plan dates parse as UTC midnight. */
-function shortDate(day: string): string {
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(
-    new Date(day),
+/** Empty blocks the size of the header, the weeks and the summary, so the page doesn't jump when the week streams in. */
+function WeekPlaceholder() {
+  return (
+    <div aria-hidden="true">
+      <div className="h-14" />
+      <div className="h-11" />
+      <div className="h-28 rounded-card bg-surface" />
+      <div className="mt-4 h-64 rounded-card bg-surface" />
+      <div className="mt-4 h-96 rounded-card bg-surface" />
+    </div>
   );
 }
 
@@ -47,35 +54,47 @@ async function ShownWeek({ searchParams }: { searchParams: Promise<Record<string
   const thisWeek = weekBounds(plan, today)?.start ?? mondayOf(today);
   const { prev, next } = neighbourWeeks(plan, start);
 
+  const totals = planTotals(plan, activities);
+  const previous = totals.find((w) => w.start === addDays(start, -7));
+  const last = plan.weeks[plan.weeks.length - 1].index;
+
   const header = (
     <>
       <header className="flex items-center gap-2">
-        <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-2 text-muted">
-            {week ? `Week ${week.index} of ${plan.weeks[plan.weeks.length - 1].index}` : "No plan"}
-            {/* A pill, so it reads as a way back rather than a label for the week shown. */}
-            {start !== thisWeek && (
-              <Link
-                href="/week"
-                className="-my-2.5 rounded-full bg-accent-soft px-3 py-0.5 text-sm font-medium text-accent-ink outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent"
-              >
-                This week
-              </Link>
-            )}
+        <PageLink start={prev} label="Previous week" path="M15 6l-6 6 6 6" />
+        <div className="min-w-0 flex-1 text-center">
+          <p className="text-sm text-muted">
+            {week ? `Week ${week.index} of ${last}${week.cutback ? " · Cutback" : ""}` : "No plan"}
           </p>
           <h1 className="text-2xl font-semibold">
             {shortDate(start)} to {shortDate(addDays(start, 6))}
           </h1>
         </div>
-        <PageLink start={prev} label="Previous week" path="M15 6l-6 6 6 6" />
         <PageLink start={next} label="Next week" path="M9 6l6 6-6 6" />
       </header>
 
-      <WeekPicker weeks={planTotals(plan, activities)} shown={start} thisWeek={thisWeek} />
+      {/* Always one line tall, so the weeks below don't move when you change week. */}
+      <div className="flex h-11 items-center justify-center gap-3">
+        {start === thisWeek ? (
+          <span className="rounded-full bg-accent-soft px-3 py-0.5 text-sm font-medium text-accent-ink">This week</span>
+        ) : (
+          <>
+            <span className="text-sm text-muted">{weeksAway(start, thisWeek)}</span>
+            <Link
+              href="/week"
+              className="flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-accent hover:bg-accent-soft focus-visible:outline-2 focus-visible:outline-accent"
+            >
+              Back to this week
+            </Link>
+          </>
+        )}
+      </div>
+
+      <WeekPicker weeks={totals} shown={start} thisWeek={thisWeek} />
       {week ? (
-        <Summary week={week} today={today} />
+        <Summary week={week} today={today} previous={previous} />
       ) : (
-        <p className="mt-6 rounded-card bg-surface p-6 text-muted">
+        <p className="mt-4 rounded-card bg-surface p-6 text-muted">
           No plan this week. The plan runs {shortDate(plan.weeks[0].start)} to {shortDate(plan.race.date)}.
         </p>
       )}
@@ -104,31 +123,66 @@ function movableRuns(moved: Plan, week: Week): Record<string, string[]> {
   return Object.fromEntries(movable.map((d) => [d.date, moveTargets(moved, d.date)]));
 }
 
-/** The week's one number: distance run against the plan, or what's planned for a week still to come. */
-function Summary({ week, today }: { week: Week; today: string }) {
-  const toGo = week.planned_m - week.actual_m;
+/** The week's one number, then runs, time and pace (or, for a week to come, what's planned). */
+function Summary({ week, today, previous }: { week: Week; today: string; previous?: { actual_m: number } }) {
   const future = week.start > today;
-  let line: string;
-  if (future) line = `${week.days.reduce((n, d) => n + d.runs.length, 0)} runs planned`;
-  else if (toGo <= 0) line = "Week's distance done";
-  else if (week.end < today) line = `${km(toGo)} km under plan, that's fine`;
-  else line = `${km(toGo)} km to go`;
+  const percent = week.planned_m > 0 ? Math.min(100, (week.actual_m / week.planned_m) * 100) : 0;
+  const longest = Math.max(0, ...week.days.flatMap((d) => d.runs.map((r) => r.distance_m)));
 
   return (
-    <section className="mt-4 rounded-card bg-surface p-6">
-      {week.cutback && <p className="mb-1 text-sm font-medium text-muted">Cutback week</p>}
-      <p className="text-6xl font-semibold">
+    <section className="mt-4 flex flex-col gap-3.5 rounded-card bg-surface p-6">
+      <div>
+        <p className="text-4xl font-bold">
+          {future ? (
+            <>
+              {km(week.planned_m)} <span className="text-xl font-medium text-muted">km planned</span>
+            </>
+          ) : (
+            <>
+              {km(week.actual_m)} <span className="text-xl font-medium text-muted">/ {km(week.planned_m)} km</span>
+            </>
+          )}
+        </p>
+        <p className="mt-2 text-muted">{weekProgress(week, today)}</p>
+      </div>
+
+      {!future && (
+        <div
+          role="progressbar"
+          aria-label="Distance this week"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(percent)}
+          className="h-2 overflow-hidden rounded-full bg-line"
+        >
+          {/* The fill width is data, so it can't be a class. */}
+          <div className="h-full rounded-full bg-accent" style={{ width: `${percent}%` }} />
+        </div>
+      )}
+
+      <div className="grid grid-cols-3 gap-3">
         {future ? (
           <>
-            {km(week.planned_m)} <span className="text-2xl font-medium text-muted">km planned</span>
+            <Stat value={String(week.runs_planned)} label="Runs planned" />
+            <Stat value={longest > 0 ? km(longest) : null} unit="km" label="Long run" />
+            <Stat value={String(week.days.reduce((n, d) => n + d.lifts.length, 0))} label="Lifts" />
           </>
         ) : (
           <>
-            {km(week.actual_m)} <span className="text-2xl font-medium text-muted">/ {km(week.planned_m)} km</span>
+            <Stat value={`${week.runs_done} of ${week.runs_planned}`} label="Runs" />
+            <Stat value={week.runs_done > 0 ? hoursMinutes(week.duration_s) : null} unit="h" label="Time" />
+            <Stat value={week.pace_s_per_km === null ? null : pace(week.pace_s_per_km)} unit="/km" label="Avg pace" />
           </>
         )}
-      </p>
-      <p className="mt-2 text-muted">{line}</p>
+      </div>
+
+      {!future && previous && (
+        <p className="text-sm text-muted">
+          Last week {km(previous.actual_m)} km
+          {/* A week still going would always look behind, so only a finished one gets the difference. */}
+          {week.end < today && ` (${week.actual_m >= previous.actual_m ? "+" : "−"}${km(Math.abs(week.actual_m - previous.actual_m))})`}
+        </p>
+      )}
     </section>
   );
 }

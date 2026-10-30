@@ -2,8 +2,8 @@
 // Pure: the page passes in the plan and that day's activities.
 
 import type { Activity, Details, Lap, Point } from "./activities";
-import { sessionsOn, type Plan, type Run } from "./plan";
-import { dayStatus, isRun, TOLERANCE, type DayStatus } from "./week";
+import { sessionsOn, type Plan, type Run, type RunType } from "./plan";
+import { dayStatus, isRun, paceOf, TOLERANCE, weekBounds, type DayStatus } from "./week";
 
 export type Recorded = {
   distance_m: number;
@@ -53,7 +53,7 @@ function combine(runs: Activity[]): Recorded | undefined {
   return {
     distance_m,
     duration_s,
-    pace_s_per_km: distance_m > 0 ? Math.round(duration_s / (distance_m / 1000)) : null,
+    pace_s_per_km: paceOf(distance_m, duration_s),
     avg_hr: hrTime > 0 ? Math.round(withHr.reduce((sum, a) => sum + a.avg_hr * a.duration_s, 0) / hrTime) : null,
   };
 }
@@ -86,6 +86,18 @@ export function runDetail(plan: Plan, activities: Activity[], date: string, toda
     hr,
     pace,
   };
+}
+
+/** `status` is undefined for a day before the plan, which has nothing to compare with. */
+export type RecentRun = { date: string; type?: RunType; recorded: Recorded; status?: DayStatus };
+
+/** The days with a recorded run, newest first, each the way run detail sees it (all that day's runs as one). */
+export function recentRuns(plan: Plan, activities: Activity[], today: string, limit = 5): RecentRun[] {
+  const dates = [...new Set(activities.filter(isRun).map((a) => a.date))].sort().reverse().slice(0, limit);
+  return dates.flatMap((date) => {
+    const { run, recorded, status } = runDetail(plan, activities, date, today);
+    return recorded ? [{ date, type: run?.type, recorded, status: weekBounds(plan, date) ? status : undefined }] : [];
+  });
 }
 
 /** Every run that day as one: each run's samples carry on from where the one before ended. */

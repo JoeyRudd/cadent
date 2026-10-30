@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isDay, localDate, nextRun, sessionsOn, type Plan } from "./plan";
+import { isDay, localDate, localHour, nextRun, sessionsOn, type Plan } from "./plan";
 
 // A two-week plan, so editing data/plan.json never breaks these tests.
 const plan: Plan = {
@@ -47,6 +47,14 @@ describe("localDate", () => {
   it("handles the DST change (Nov 1, 2026)", () => {
     expect(localDate(new Date("2026-11-01T04:30:00Z"))).toBe("2026-11-01");
     expect(localDate(new Date("2026-11-02T04:30:00Z"))).toBe("2026-11-01");
+  });
+});
+
+describe("localHour", () => {
+  it("is the hour in Toronto, 0 at midnight", () => {
+    expect(localHour(new Date("2026-10-30T16:30:00Z"))).toBe(12);
+    expect(localHour(new Date("2026-10-30T04:05:00Z"))).toBe(0);
+    expect(localHour(new Date("2026-10-30T03:59:00Z"))).toBe(23);
   });
 });
 

@@ -5,6 +5,7 @@ import { Suspense } from "react";
 
 import { CheckIn } from "@/components/CheckIn";
 import { MoveRun } from "@/components/MoveRun";
+import { ICON_BUTTON } from "@/components/iconButton";
 import { Laps, Splits } from "@/components/Splits";
 import { LineChart } from "@/components/charts/LineChart";
 import { ZoneTime } from "@/components/charts/ZoneTime";
@@ -25,15 +26,15 @@ import {
   type Recorded,
   type RunDetail,
 } from "@/lib/run";
-import { isRun, weekOf } from "@/lib/week";
+import { isRun, mondayOf, weekBounds, weekOf } from "@/lib/week";
 
 import { moveRunFor, saveCheckInFor } from "./actions";
 
-export default function RunPage({ params }: PageProps<"/run/[date]">) {
+export default function RunPage({ params, searchParams }: PageProps<"/run/[date]">) {
   return (
     <main className="mx-auto max-w-md px-5 py-7">
       <Suspense>
-        <Detail params={params} />
+        <Detail params={params} searchParams={searchParams} />
       </Suspense>
     </main>
   );
@@ -48,8 +49,15 @@ const BANNERS: Record<Tone, { box: string; title: string }> = {
 };
 
 // Reads the clock and the database, so it renders per request instead of at build time.
-async function Detail({ params }: { params: Promise<{ date: string }> }) {
+async function Detail({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ date: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { date } = await params;
+  const { from } = await searchParams;
   if (!isDay(date)) notFound();
   await connection();
   const today = localDate(new Date());
@@ -60,15 +68,13 @@ async function Detail({ params }: { params: Promise<{ date: string }> }) {
   // From the distances as shown, so "5.2 km" against "5.0" always reads "+0.2".
   const gap = run && recorded ? Number(km(recorded.distance_m)) - Number(km(planned_m)) : 0;
   const banner = verdict(detail, Math.abs(gap).toFixed(1));
+  // Back goes to the week it was opened from, otherwise to Today.
+  const back = from === "week" ? `/week?start=${weekBounds(moved, date)?.start ?? mondayOf(date)}` : "/";
 
   return (
     <>
       <header className="flex items-center gap-3">
-        <Link
-          href="/"
-          aria-label="Back"
-          className="flex size-11 items-center justify-center rounded-full border border-line bg-surface text-ink"
-        >
+        <Link href={back} aria-label="Back" className={ICON_BUTTON}>
           <svg
             aria-hidden="true"
             className="size-5"

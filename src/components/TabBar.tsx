@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense } from "react";
 
+import { FOCUS_RING } from "@/components/iconButton";
+
 const TABS = [
   { href: "/", label: "Today" },
   { href: "/week", label: "Week" },
@@ -36,7 +38,7 @@ function Tabs({ pathname }: { pathname?: string }) {
               <Link
                 href={tab.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex min-h-14 items-center justify-center text-sm font-medium ${
+                className={`flex min-h-14 items-center justify-center text-sm font-medium ${FOCUS_RING} ${
                   active ? "text-accent" : "text-muted"
                 }`}
               >
