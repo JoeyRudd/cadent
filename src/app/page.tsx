@@ -2,6 +2,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
+import { AskClaude } from "@/components/AskClaude";
 import { Chevron } from "@/components/Chevron";
 import { Readiness } from "@/components/Readiness";
 import { RunCard } from "@/components/RunCard";
@@ -12,6 +13,7 @@ import { ICON_BUTTON, ROW_LINK } from "@/components/iconButton";
 import { activitiesBetween, type Activity } from "@/lib/activities";
 import { dayLabel, km, runTypeLabel, shortDayLabel, timeAndPace, weekday } from "@/lib/format";
 import { currentPlan } from "@/lib/moves";
+import { connectorUrls } from "@/lib/oauth";
 import { localDate, localHour, nextRun, sessionsOn, type Lift, type Plan, type Run } from "@/lib/plan";
 import { recentRuns } from "@/lib/run";
 import { addDays, weekOf, type WeekDay } from "@/lib/week";
@@ -104,6 +106,11 @@ async function Today() {
             done={today && today.actual_m > 0 ? today : undefined}
           />
           {readiness && <Readiness readiness={readiness} />}
+          {connectorUrls() && (
+            <AskClaude
+              question={`Using Cadent, look at my plan for today (${day}), my recent runs and last night's sleep. How am I doing, and should I change anything today?`}
+            />
+          )}
         </div>
         <div className="space-y-4">
           {week && <WeekStrip week={week} today={day} previous={lastWeek} />}

@@ -64,19 +64,19 @@ export async function disconnectGarmin(): Promise<string | undefined> {
 }
 
 /**
- * Why this request may not change the Garmin connection, or undefined when it may.
+ * Why this request may not change a connection (Garmin's, or Claude's in connect/actions.ts), or undefined when it may.
  * `tailscale serve` sets Tailscale-User-Login and drops any copy the client sent, so with the port
  * bound to localhost (docker-compose.yml) the header can't be forged.
  */
-export async function ownerError(): Promise<string | undefined> {
+export async function ownerError(service = "Garmin"): Promise<string | undefined> {
   const owner = process.env.CADENT_OWNER;
   if (!owner) {
     return process.env.NODE_ENV === "production"
-      ? "Set CADENT_OWNER in .env to your Tailscale login to connect Garmin."
+      ? `Set CADENT_OWNER in .env to your Tailscale login to connect ${service}.`
       : undefined;
   }
   const login = (await headers()).get("tailscale-user-login");
-  return login?.toLowerCase() === owner.toLowerCase() ? undefined : "Only Cadent's owner can change the Garmin connection.";
+  return login?.toLowerCase() === owner.toLowerCase() ? undefined : `Only Cadent's owner can change the ${service} connection.`;
 }
 
 /** Starts a login with email and password, or finishes one with its MFA code. Never logs what was typed. */

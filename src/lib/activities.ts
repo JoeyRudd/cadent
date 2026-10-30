@@ -1,9 +1,12 @@
 // Runs Garmin recorded, read from the SQLite file the Python sync script writes.
 // Server-only. A missing file or table means nothing has synced yet: no activities.
 
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
+
+import { joinDetails } from "./run";
+import { isRun } from "./week";
 
 export type Activity = {
   id: string;
@@ -28,6 +31,19 @@ export function readTable<T>(table: string, fallback: T, read: (db: DatabaseSync
   try {
     const exists = db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?").get(table);
     return exists ? read(db) : fallback;
+  } finally {
+    db.close();
+  }
+}
+
+/** `run` against the database after `schema` (CREATE TABLE IF NOT EXISTS ...), creating the file on first use. */
+export function writeTable<T>(schema: string, run: (db: DatabaseSync) => T, file = dbPath()): T {
+  mkdirSync(/*turbopackIgnore: true*/ path.dirname(file), { recursive: true });
+  // timeout: wait out the sync's brief write lock rather than fail the save.
+  const db = new DatabaseSync(/*turbopackIgnore: true*/ file, { timeout: 5000 });
+  try {
+    db.exec(schema);
+    return run(db);
   } finally {
     db.close();
   }
@@ -108,4 +124,12 @@ export function detailsFor(ids: string[], file = dbPath()): Map<string, Details>
     },
     file,
   );
+}
+
+/** The day's runs' laps and samples as one run, or undefined when the sync hasn't fetched any. `activities` are that day's. */
+export function dayDetails(activities: Activity[], file = dbPath()): Details | undefined {
+  const runs = activities.filter(isRun);
+  const found = detailsFor(runs.map((a) => a.id), file);
+  const details = runs.map((a) => found.get(a.id)).filter((d) => d !== undefined);
+  return details.length > 0 ? joinDetails(details) : undefined;
 }

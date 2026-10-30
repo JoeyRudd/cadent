@@ -152,3 +152,9 @@ export function weeksAway(start: string, thisWeek: string): string {
   if (weeks === 1) return "Next week";
   return weeks < 0 ? `${-weeks} weeks ago` : `In ${weeks} weeks`;
 }
+
+/** "Changed by Claude from 16.0 km" for a run whose distance Claude changed (changes.ts), otherwise undefined. */
+export function changedNote(run: Run): string | undefined {
+  if (run.planned_distance_m === undefined) return undefined;
+  return `Changed by Claude from ${km(run.planned_distance_m)} km`;
+}

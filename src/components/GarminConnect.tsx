@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 
 import { connect, disconnect } from "@/app/settings/actions";
-import { PRIMARY_BUTTON } from "@/components/iconButton";
+import { PRIMARY_BUTTON, SECONDARY_BUTTON } from "@/components/iconButton";
 
 const FIELD = "h-12 rounded-button border border-line bg-bg px-3.5 text-base text-ink";
 
@@ -31,7 +31,7 @@ export function GarminConnect({ account }: { account?: { name?: string } }) {
           <button
             type="submit"
             disabled={disconnecting}
-            className="h-12 w-full rounded-button border border-line text-base font-semibold text-ink active:opacity-70 disabled:opacity-50"
+            className={`${SECONDARY_BUTTON} w-full`}
           >
             {disconnecting ? "Disconnecting…" : "Disconnect"}
           </button>

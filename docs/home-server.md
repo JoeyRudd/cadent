@@ -1,7 +1,8 @@
 # Running Cadent on the home server
 
 One Docker container runs the app and the Garmin sync. Tailscale gives the phone private HTTPS;
-nothing is exposed to the internet.
+nothing is exposed to the internet, unless you turn on the Claude connector (step 9), which opens
+only its own paths.
 
 1. **Install Docker and Tailscale** on the home PC ([Docker](https://docs.docker.com/engine/install/),
    [Tailscale](https://tailscale.com/download)), then `sudo tailscale up` and sign in.
@@ -58,3 +59,31 @@ nothing is exposed to the internet.
    ```bash
    git pull && docker compose up -d --build
    ```
+
+9. **Connect Claude (optional).** Claude reads your plan, runs and sleep, and can move runs or change
+   their distance, using your own Claude plan. Claude.ai calls Cadent from Anthropic's servers, so the
+   connector's paths go on the internet through [Tailscale Funnel](https://tailscale.com/kb/1223/funnel)
+   on port 8443. The rest of the app stays tailnet-only on 443, and you approve Claude on the tailnet.
+
+   Turn on Funnel for the tailnet in the Tailscale admin console (it asks the first time), then:
+
+   ```bash
+   sudo tailscale funnel --bg --https=8443 --set-path=/mcp http://127.0.0.1:3000/mcp
+   sudo tailscale funnel --bg --https=8443 --set-path=/oauth http://127.0.0.1:3000/oauth
+   sudo tailscale funnel --bg --https=8443 --set-path=/.well-known/oauth-protected-resource http://127.0.0.1:3000/.well-known/oauth-protected-resource
+   sudo tailscale funnel --bg --https=8443 --set-path=/.well-known/oauth-authorization-server http://127.0.0.1:3000/.well-known/oauth-authorization-server
+   ```
+
+   In `.env`, set `CADENT_URL=https://<machine-name>.<tailnet>.ts.net` and
+   `CADENT_PUBLIC_URL=https://<machine-name>.<tailnet>.ts.net:8443`, then `docker compose up -d`.
+   Check from a phone off Wi-Fi with Tailscale off: the first should print JSON and the second should not load.
+
+   ```bash
+   curl https://<machine-name>.<tailnet>.ts.net:8443/.well-known/oauth-protected-resource
+   curl https://<machine-name>.<tailnet>.ts.net:8443/
+   ```
+
+   In Claude (claude.ai › Settings › Connectors › Add custom connector), add
+   `https://<machine-name>.<tailnet>.ts.net:8443/mcp`. Claude opens Cadent's Connect page: allow it
+   from a device on the tailnet. Settings › Claude in Cadent shows the connection and disconnects it.
+   To close the paths again: `sudo tailscale funnel --https=8443 off`.

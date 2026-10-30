@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Chevron } from "@/components/Chevron";
 import { StatusPill } from "@/components/StatusPill";
 import { FOCUS_RING, ROW_LINK } from "@/components/iconButton";
-import { dayOfMonth, km, runTypeLabel, timeAndPace, weekday } from "@/lib/format";
+import { changedNote, dayOfMonth, km, runTypeLabel, timeAndPace, weekday } from "@/lib/format";
 import type { WeekDay } from "@/lib/week";
 
 /** Gentle words for an off-plan day. */
@@ -32,6 +32,7 @@ export function WeekDayRow({ day, isToday, drop }: { day: WeekDay; isToday: bool
   const planned = day.runs.map((run) => runTypeLabel(run.type)).join(" + ");
   const lifts = day.lifts.map((lift) => (lift.after_run ? `${lift.name}, after the run` : lift.name)).join(" + ");
   const detail = note(day);
+  const changed = day.runs.map(changedNote).find((n) => n !== undefined);
   const recorded = ran
     ? `${timeAndPace(day.duration_s, day.pace_s_per_km)}${day.recorded > 1 ? ` · ${day.recorded} runs` : ""}`
     : undefined;
@@ -60,6 +61,7 @@ export function WeekDayRow({ day, isToday, drop }: { day: WeekDay; isToday: bool
         ) : (
           <p className={ran ? "font-medium" : quiet}>{ran ? "Run" : lifts ? "No run" : "Rest"}</p>
         )}
+        {changed && <p className={`text-sm ${quiet}`}>{changed}</p>}
         {recorded && <p className={`text-sm ${quiet}`}>{recorded}</p>}
         {lifts && <p className={`text-sm ${quiet}`}>Lift: {lifts}</p>}
         {detail && <p className={`text-sm ${quiet}`}>{detail}</p>}

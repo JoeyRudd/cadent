@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { PRIMARY_BUTTON } from "@/components/iconButton";
 import { StatusPill } from "@/components/StatusPill";
-import { blockLabel, extraLabel, km, paceTarget, runTypeLabel, timeAndPace, zoneLabel } from "@/lib/format";
+import { blockLabel, changedNote, extraLabel, km, paceTarget, runTypeLabel, timeAndPace, zoneLabel } from "@/lib/format";
 import type { Lift, Plan, Run } from "@/lib/plan";
 import type { WeekDay } from "@/lib/week";
 
@@ -41,6 +41,7 @@ export function RunCard({
         <span className="text-7xl font-bold leading-none tracking-tight">{km(run.distance_m)}</span>
         <span className="text-2xl font-semibold">km</span>
       </p>
+      {changedNote(run) && <p className="-mt-1.5 text-sm">{changedNote(run)}</p>}
 
       {pills.length > 0 && (
         <ul className="flex flex-wrap gap-2">

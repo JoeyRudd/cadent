@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
+import { AskClaude } from "@/components/AskClaude";
 import { BackLink } from "@/components/BackLink";
 import { CheckIn } from "@/components/CheckIn";
 import { MoveRun } from "@/components/MoveRun";
@@ -9,13 +10,13 @@ import { ICON_BUTTON } from "@/components/iconButton";
 import { Laps, Splits } from "@/components/Splits";
 import { LineChart } from "@/components/charts/LineChart";
 import { ZoneTime } from "@/components/charts/ZoneTime";
-import { activitiesBetween, detailsFor, type Activity, type Details } from "@/lib/activities";
-import { clock, km, pace, paceTarget, runTypeLabel, shortDayLabel, zoneLabel } from "@/lib/format";
+import { activitiesBetween, dayDetails, type Activity, type Details } from "@/lib/activities";
+import { changedNote, clock, km, pace, paceTarget, runTypeLabel, shortDayLabel, zoneLabel } from "@/lib/format";
 import { checkInOn } from "@/lib/checkins";
 import { currentPlan, moveTargets, moveWarnings } from "@/lib/moves";
+import { connectorUrls } from "@/lib/oauth";
 import { isDay, localDate, type Plan, type Run } from "@/lib/plan";
 import {
-  joinDetails,
   kmSplits,
   lapKinds,
   paceRange,
@@ -26,7 +27,7 @@ import {
   type Recorded,
   type RunDetail,
 } from "@/lib/run";
-import { isRun, mondayOf, weekBounds, weekOf } from "@/lib/week";
+import { mondayOf, weekBounds, weekOf } from "@/lib/week";
 
 import { moveRunFor, saveCheckInFor } from "./actions";
 
@@ -125,7 +126,7 @@ async function Detail({
               label="Distance"
               value={recorded && km(recorded.distance_m)}
               unit="km"
-              plan={run && `Plan ${km(planned_m)} km`}
+              plan={run && [`Plan ${km(planned_m)} km`, changedNote(run)].filter(Boolean).join(". ")}
               pill={
                 (status === "done" || status === "short" || status === "over") && {
                   label: `${gap < 0 ? "−" : "+"}${Math.abs(gap).toFixed(1)} km`,
@@ -156,7 +157,17 @@ async function Detail({
           </div>
         )}
 
-        {recorded && <RunData details={dayDetails(activities)} plan={moved} run={run} recorded={recorded} />}
+        {recorded && <RunData details={detailsOn(activities)} plan={moved} run={run} recorded={recorded} />}
+
+        {connectorUrls() && (run || recorded) && (
+          <AskClaude
+            question={
+              recorded
+                ? `Using Cadent, how did my run on ${date} go? Compare it with the plan, my splits, heart rate and sleep.`
+                : `Using Cadent, look at my ${run ? runTypeLabel(run.type).toLowerCase() : ""} run on ${date}. Am I ready for it, or should I change it?`
+            }
+          />
+        )}
 
         {/* A recorded run stays put, unless it was moved there: then it can still go back. */}
         {run && (!recorded || run.planned_date) && (
@@ -185,12 +196,9 @@ function dayActivities(date: string) {
 }
 
 /** The day's runs' laps and samples as one run. A database error shows the run without them. */
-function dayDetails(activities: Activity[]): Details | undefined {
+function detailsOn(activities: Activity[]): Details | undefined {
   try {
-    const runs = activities.filter(isRun);
-    const found = detailsFor(runs.map((a) => a.id));
-    const details = runs.map((a) => found.get(a.id)).filter((d) => d !== undefined);
-    return details.length > 0 ? joinDetails(details) : undefined;
+    return dayDetails(activities);
   } catch (error) {
     console.error("Couldn't read run details", error);
     return undefined;

@@ -2,10 +2,9 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
-import { activitiesBetween } from "@/lib/activities";
-import { checkPlan, historyRange } from "@/lib/check";
+import { changedPlan } from "@/lib/changes";
+import { checkPlan } from "@/lib/check";
 import { dayLabel } from "@/lib/format";
-import { plan } from "@/lib/plan";
 import type { Finding } from "@/lib/rules";
 
 export const metadata: Metadata = { title: "Plan check · Cadent" };
@@ -38,8 +37,8 @@ function FindingsPlaceholder() {
 // Reads Garmin history from the database, so it renders per request instead of at build time.
 async function Findings() {
   await connection();
-  const { from, to } = historyRange(plan);
-  const findings = checkPlan(plan, activitiesBetween(from, to));
+  const { plan, history } = changedPlan();
+  const findings = checkPlan(plan, history);
   const weeks = plan.weeks
     .map((week) => {
       const days = new Set(week.sessions.map((s) => s.date));

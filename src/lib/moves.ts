@@ -1,12 +1,9 @@
 // Runs moved to another day of their week, saved from the run detail screen. plan.json stays as
 // written; pages read the plan through withMoves. Server-only for the database parts.
 
-import { mkdirSync } from "node:fs";
-import path from "node:path";
-import { DatabaseSync } from "node:sqlite";
-
-import { dbPath, readTable } from "./activities";
-import { isDay, plan, sessionsOn, type Plan, type Run } from "./plan";
+import { dbPath, readTable, writeTable } from "./activities";
+import { savedChanges, withChanges } from "./changes";
+import { isDay, plan, runOn, sessionsOn, type Plan, type Run } from "./plan";
 import { addDays, weekBounds } from "./week";
 
 /** Planned date → the day the run now happens on. Keyed by the plan's date, so moving twice replaces the move. */
@@ -88,14 +85,32 @@ export function moveWarnings(moved: Plan, day: string): string[] {
   return warnings;
 }
 
-/** plan.json with the saved moves applied: what the pages show. A database error shows the plan as written. */
+/** plan.json with the saved changes and moves applied: what the pages show. A database error shows the plan as written. */
 export function currentPlan(file = dbPath()): Plan {
   try {
-    return withMoves(plan, savedMoves(file));
+    return withMoves(withChanges(plan, savedChanges(file)), savedMoves(file));
   } catch (error) {
     console.error("Couldn't read moved runs", error);
     return plan;
   }
+}
+
+/** What a move did: why it couldn't happen, or the week's rest-day notes as it now stands. */
+export type MoveResult = { error: string } | { warnings: string[] };
+
+/** Moves the run now on `from` to `to` if moveError allows it. The days come from the client, so they're checked here. */
+export function tryMove(from: string, to: string, file = dbPath()): MoveResult {
+  // savedMoves, not currentPlan: a read error should fail the move, not check it against the plan as written.
+  const moves = savedMoves(file);
+  const moved = withMoves(plan, moves);
+  const error = moveError(moved, from, to);
+  if (error) return { error };
+  const run = runOn(moved, from);
+  // Keyed by the plan's date, so a second move replaces the first and moving back deletes it.
+  const planned = run?.planned_date ?? from;
+  saveMove(planned, to, file);
+  // A move back onto the planned day is ignored by withMoves, the same as the deleted row.
+  return { warnings: moveWarnings(withMoves(plan, { ...moves, [planned]: to }), to) };
 }
 
 /** Every saved move. A missing file or table means nothing has moved. */
@@ -113,20 +128,18 @@ export function savedMoves(file = dbPath()): Moves {
 
 /** Saves a move, or with `to` equal to `from` puts the run back on its planned day. Creates the file and table on first use. */
 export function saveMove(from: string, to: string, file = dbPath()): void {
-  mkdirSync(/*turbopackIgnore: true*/ path.dirname(file), { recursive: true });
-  // timeout: wait out the sync's brief write lock rather than fail the save.
-  const db = new DatabaseSync(/*turbopackIgnore: true*/ file, { timeout: 5000 });
-  try {
-    db.exec(SCHEMA);
-    if (to === from) {
-      db.prepare("DELETE FROM moves WHERE from_date = ?").run(from);
-    } else {
-      db.prepare(
-        `INSERT INTO moves (from_date, to_date, saved_at) VALUES (?, ?, ?)
-         ON CONFLICT(from_date) DO UPDATE SET to_date = excluded.to_date, saved_at = excluded.saved_at`,
-      ).run(from, to, new Date().toISOString());
-    }
-  } finally {
-    db.close();
-  }
+  writeTable(
+    SCHEMA,
+    (db) => {
+      if (to === from) {
+        db.prepare("DELETE FROM moves WHERE from_date = ?").run(from);
+      } else {
+        db.prepare(
+          `INSERT INTO moves (from_date, to_date, saved_at) VALUES (?, ?, ?)
+           ON CONFLICT(from_date) DO UPDATE SET to_date = excluded.to_date, saved_at = excluded.saved_at`,
+        ).run(from, to, new Date().toISOString());
+      }
+    },
+    file,
+  );
 }
