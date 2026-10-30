@@ -38,7 +38,7 @@ export function WeekPicker({ weeks, shown, thisWeek }: { weeks: WeekTotal[]; sho
                 href={`/week?start=${w.start}`}
                 aria-current={isShown ? "page" : undefined}
                 aria-label={`Week ${w.index}${isThisWeek ? ", this week" : ""}${w.cutback ? ", cutback" : ""}: ${km(w.actual_m)} of ${km(w.planned_m)} km`}
-                className={`flex w-11 flex-col items-center gap-1 rounded-button py-1.5 text-xs font-medium focus-visible:outline-2 focus-visible:outline-accent ${
+                className={`flex w-11 flex-col items-center gap-1 rounded-button py-1.5 text-xs font-medium active:bg-accent-soft focus-visible:outline-2 focus-visible:outline-accent ${
                   isShown ? "bg-accent-soft text-accent-ink" : "text-muted"
                 }`}
               >

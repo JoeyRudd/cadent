@@ -44,7 +44,7 @@ export function MoveRun({
               disabled={pending || !day.free}
               aria-label={`Move to ${weekday(day.date)}`}
               aria-current={isCurrent ? "date" : undefined}
-              className={`h-11 rounded-lg text-sm font-semibold disabled:opacity-50 ${
+              className={`h-11 rounded-lg text-sm font-semibold active:opacity-70 disabled:opacity-50 ${
                 isCurrent ? "bg-accent text-on-accent disabled:opacity-100" : "border border-line bg-bg text-ink"
               }`}
             >
@@ -60,7 +60,7 @@ export function MoveRun({
           name="to"
           value={plannedOn}
           disabled={pending || !days.find((d) => d.date === plannedOn)?.free}
-          className="h-11 rounded-button border border-line text-sm font-semibold text-ink disabled:opacity-50"
+          className="h-11 rounded-button border border-line text-sm font-semibold text-ink active:opacity-70 disabled:opacity-50"
         >
           Move back to {weekday(plannedOn)}
         </button>

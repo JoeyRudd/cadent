@@ -13,11 +13,13 @@ export async function saveCheckInFor(date: string, _prev: CheckInState, form: Fo
   if (!checkIn) return { error: "Pick an effort and answer the pain question." };
   try {
     saveCheckIn(checkIn);
-    return { saved: checkIn };
   } catch (error) {
     console.error("Couldn't save check-in", error);
     return { error: "Couldn't save. Try again in a moment." };
   }
+  // Outside the try: a saved check-in must never report a failure.
+  refresh();
+  return { saved: checkIn };
 }
 
 /** What a move did: why it couldn't happen, or the week's rest-day notes as it now stands. */

@@ -15,10 +15,23 @@ type WeekFindings = { index: number; start: string; findings: Finding[] };
 export default function Check() {
   return (
     <main className="mx-auto max-w-md px-4 py-8">
-      <Suspense>
+      <Suspense fallback={<FindingsPlaceholder />}>
         <Findings />
       </Suspense>
     </main>
+  );
+}
+
+/** Empty blocks the size of the title, summary and first weeks, so the page doesn't jump when the findings stream in. */
+function FindingsPlaceholder() {
+  return (
+    <div aria-hidden="true">
+      <div className="h-14" />
+      <div className="mt-6 space-y-4">
+        <div className="h-28 rounded-card bg-surface" />
+        <div className="h-48 rounded-card bg-surface" />
+      </div>
+    </div>
   );
 }
 

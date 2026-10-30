@@ -8,6 +8,9 @@ const KEY = "cadent.theme";
 /** The browser bar colour: the `bg` token's light and dark values (globals.css). */
 export const BAR_COLORS = { light: "#f4f5ef", dark: "#141a17" } as const;
 
+/** The home screen icon: the `accent` and `on-accent` tokens' light values. Drawn as an image, which can't read CSS tokens. */
+export const ICON_COLORS = { background: "#277a70", mark: "#ffffff" } as const;
+
 // For System, layout.tsx's `viewport` gives one theme-color per scheme. A choice adds this one
 // first in <head>, with no media query, so it wins. React doesn't render it, so hydration leaves it be.
 const BAR_ID = "cadent-bar";
