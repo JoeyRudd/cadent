@@ -3,13 +3,16 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 
 import { moveRun } from "@/app/run/[date]/actions";
+import { toggleLiftDay } from "@/app/week/actions";
 import { AskClaude } from "@/components/AskClaude";
 import { ICON_BUTTON } from "@/components/iconButton";
+import { LiftDays } from "@/components/LiftDays";
 import { Stat } from "@/components/Stat";
 import { WeekBoard } from "@/components/WeekBoard";
 import { WeekPicker } from "@/components/WeekPicker";
 import { activitiesBetween } from "@/lib/activities";
 import { hoursMinutes, km, pace, shortDate, weekProgress, weeksAway } from "@/lib/format";
+import { LIFT_NAMES } from "@/lib/lifts";
 import { currentPlan, moveTargets } from "@/lib/moves";
 import { connectorUrls } from "@/lib/oauth";
 import { localDate, type Plan } from "@/lib/plan";
@@ -114,17 +117,25 @@ async function ShownWeek({ searchParams }: { searchParams: Promise<Record<string
 
   if (!week) return header;
   return (
-    <WeekBoard
-      key={week.start}
-      days={week.days}
-      today={today}
-      targets={movableRuns(plan, week)}
-      move={moveRun}
-      prev={prev && weekHref(prev)}
-      next={next && weekHref(next)}
-    >
-      {header}
-    </WeekBoard>
+    <>
+      <WeekBoard
+        key={week.start}
+        days={week.days}
+        today={today}
+        targets={movableRuns(plan, week)}
+        move={moveRun}
+        prev={prev && weekHref(prev)}
+        next={next && weekHref(next)}
+      >
+        {header}
+      </WeekBoard>
+      <LiftDays
+        key={`lifts-${week.start}`}
+        action={toggleLiftDay}
+        days={week.days.map((d) => ({ date: d.date, lift: d.lifts[0]?.name }))}
+        names={LIFT_NAMES}
+      />
+    </>
   );
 }
 

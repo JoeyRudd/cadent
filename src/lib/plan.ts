@@ -70,7 +70,7 @@ export function localHour(now: Date): number {
   return Number(new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE, hour: "numeric", hourCycle: "h23" }).format(now));
 }
 
-function allSessions(plan: Plan): Session[] {
+export function allSessions(plan: Plan): Session[] {
   return plan.weeks.flatMap((week) => week.sessions);
 }
 
