@@ -5,8 +5,10 @@ import { afterAll, describe, expect, it } from "vitest";
 
 import type { Activity } from "./activities";
 import { changedPlan, checkChange, saveChange, savedChanges, tryChange, withChanges } from "./changes";
+import { saveLiftDay } from "./lifts";
 import { withMoves } from "./moves";
 import { sessionsOn, type Plan } from "./plan";
+import { addDays } from "./week";
 
 const dir = mkdtempSync(path.join(tmpdir(), "cadent-changes-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
@@ -106,5 +108,17 @@ describe("tryChange", () => {
   it("saves nothing when the change is refused", () => {
     expect(tryChange(first.date, 500, before, first.date, file)).toHaveProperty("error");
     expect(savedChanges(file)).toEqual({});
+  });
+});
+
+describe("changedPlan", () => {
+  it("counts the lift days marked on the Week screen", () => {
+    const file = path.join(dir, "lifts.db");
+    const day = changedPlan(file).plan.weeks[0].start;
+    saveLiftDay(day, null, "Full-body A", file);
+    saveLiftDay(addDays(day, 4), "Upper body", null, file);
+    const { plan } = changedPlan(file);
+    expect(sessionsOn(plan, day).filter((s) => s.kind === "lift")).toEqual([]);
+    expect(sessionsOn(plan, addDays(day, 4))).toContainEqual({ date: addDays(day, 4), kind: "lift", name: "Upper body" });
   });
 });

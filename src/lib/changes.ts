@@ -5,6 +5,7 @@
 import { activitiesBetween, dbPath, readTable, writeTable, type Activity } from "./activities";
 import { checkPlan, historyRange } from "./check";
 import { km } from "./format";
+import { savedLiftDays, withLifts } from "./lifts";
 import { plan as written, runOn, type Plan } from "./plan";
 
 /** Planned date → the run's new distance in metres. Keyed by the plan's date, like Moves. */
@@ -70,11 +71,12 @@ export function checkChange(
 }
 
 /**
- * plan.json with the saved changes but not the moves, and the Garmin runs before it: what the safety
- * rules check, since they look at the plan's own days (the Plan check page, Claude's check_plan).
+ * plan.json with the saved changes and lift days but not the moves, and the Garmin runs before it: what
+ * the safety rules check, since they look at the plan's own days (the Plan check page, Claude's
+ * check_plan). Lift days are kept by the day they're on, so they don't shift those days.
  */
 export function changedPlan(file = dbPath()): { plan: Plan; history: Activity[] } {
-  const changed = withChanges(written, savedChanges(file));
+  const changed = withLifts(withChanges(written, savedChanges(file)), savedLiftDays(file));
   const { from, to } = historyRange(changed);
   return { plan: changed, history: activitiesBetween(from, to, file) };
 }

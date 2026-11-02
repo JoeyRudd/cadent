@@ -19,7 +19,7 @@ const CIRCLES: Record<DayStatus, string> = {
 
 /** What goes inside a day's circle: what's planned, what was run, or a mark. */
 function circleText(day: WeekDay): string {
-  if (day.status === "rest") return "Off";
+  if (day.status === "rest") return day.lifts.length > 0 ? "Lift" : "Off";
   if (day.status === "missed") return "–";
   return km(day.status === "upcoming" ? day.planned_m : day.actual_m);
 }
@@ -79,6 +79,7 @@ export function WeekStrip({
       <ol className="-mx-2 grid grid-cols-7">
         {week.days.map((day) => {
           const isToday = day.date === today;
+          const lifted = day.lifts.length > 0;
           const circle = (
             <>
               <span aria-hidden="true" className="text-xs text-muted">
@@ -87,7 +88,8 @@ export function WeekStrip({
               {/* Colour carries the status on screen; say it in words for screen readers. */}
               <span className="sr-only">
                 {weekday(day.date)}, {isToday ? "today, " : ""}
-                {day.status}:
+                {day.status}
+                {lifted ? ", lift" : ""}:
               </span>
               <span
                 className={`flex size-9.5 items-center justify-center rounded-full text-xs font-semibold ${
@@ -96,6 +98,8 @@ export function WeekStrip({
               >
                 {circleText(day)}
               </span>
+              {/* A run day's lift goes under its circle; a rest day's is in the circle itself. */}
+              {day.status !== "rest" && lifted && <span className="text-xs text-muted">Lift</span>}
             </>
           );
           const column = "flex min-h-11 flex-col items-center gap-1.5 py-1";

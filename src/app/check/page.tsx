@@ -71,7 +71,7 @@ function Summary({ findings }: { findings: Finding[] }) {
       <p className="text-4xl font-semibold">{findings.length === 0 ? "Plan looks safe" : parts.join(", ")}</p>
       <p className="mt-2 text-muted">
         {findings.length === 0
-          ? "Every run passes the safety rules."
+          ? "The plan passes every safety rule."
           : "Checked against the safety rules. Errors need a change to the plan."}
       </p>
     </section>

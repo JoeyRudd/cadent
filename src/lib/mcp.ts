@@ -138,7 +138,8 @@ const TOOLS: Tool[] = [
   },
   {
     name: "check_plan",
-    description: "Every safety-rule finding for the plan as it now stands (long-run spikes over 110% of the last 30 days, runs under 5 km).",
+    description: "Every safety-rule finding for the plan as it now stands (long-run spikes over 110% of the last 30 days, runs under 5 km, " +
+      "weeks with no rest day, long runs the day after a full-body lift).",
     inputSchema: { type: "object", properties: {} },
     annotations: read,
     call: () => ({ findings: planFindings() }),

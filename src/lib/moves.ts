@@ -3,7 +3,9 @@
 
 import { dbPath, readTable, writeTable } from "./activities";
 import { savedChanges, withChanges } from "./changes";
-import { isDay, plan, runOn, sessionsOn, type Plan, type Run } from "./plan";
+import { savedLiftDays, withLifts } from "./lifts";
+import { allSessions, isDay, plan, runOn, sessionsOn, type Plan } from "./plan";
+import { LONG_AFTER_FULL_BODY, REST_DAY, validate } from "./rules";
 import { addDays, weekBounds } from "./week";
 
 /** Planned date → the day the run now happens on. Keyed by the plan's date, so moving twice replaces the move. */
@@ -67,28 +69,38 @@ export function moveTargets(moved: Plan, from: string): string[] {
   return Array.from({ length: 7 }, (_, i) => addDays(week.start, i)).filter((to) => !moveError(moved, from, to));
 }
 
-/** Gentle notes on the run's week as it now stands, from the plan's rest-day rules. */
+const REST_RULES = new Set([REST_DAY, LONG_AFTER_FULL_BODY]);
+
+/** The rest-day findings for `day`'s week of the moved plan: gentle notes after a move or a lift day. */
 export function moveWarnings(moved: Plan, day: string): string[] {
   const week = weekBounds(moved, day);
   if (!week) return [];
-  const days = Array.from({ length: 7 }, (_, i) => addDays(week.start, i));
-  const warnings: string[] = [];
-  if (days.every((d) => sessionsOn(moved, d).length > 0)) {
-    warnings.push("No full rest day this week. Keep one day free of running and lifting.");
-  }
-  const longRun = days
-    .flatMap((d) => sessionsOn(moved, d))
-    .find((s): s is Run => s.kind === "run" && s.type === "long");
-  if (longRun && sessionsOn(moved, addDays(longRun.date, -1)).some((s) => s.kind === "lift" && s.name.startsWith("Full-body"))) {
-    warnings.push("The long run is the day after a full-body lift. The plan keeps those apart.");
-  }
-  return warnings;
+  // The week, plus the Sunday before for a full-body lift ahead of a Monday long run.
+  const sessions = allSessions(moved).filter((s) => addDays(week.start, -1) <= s.date && s.date <= week.end);
+  return validate(sessions, [])
+    .filter((f) => REST_RULES.has(f.code) && week.start <= f.day)
+    .map((f) => f.message);
 }
 
-/** plan.json with the saved changes and moves applied: what the pages show. A database error shows the plan as written. */
+/** plan.json with the saved changes, moves and lift days applied. A database error throws. */
+export function savedPlan(file = dbPath()): Plan {
+  return withLifts(withMoves(withChanges(plan, savedChanges(file)), savedMoves(file)), savedLiftDays(file));
+}
+
+/** moveWarnings for `day` once a change is saved. A read error gives no notes: the change is saved, so it mustn't fail. */
+export function savedWarnings(day: string, file = dbPath()): string[] {
+  try {
+    return moveWarnings(savedPlan(file), day);
+  } catch (error) {
+    console.error("Couldn't read the plan for warnings", error);
+    return [];
+  }
+}
+
+/** savedPlan, what the pages show. A database error shows the plan as written. */
 export function currentPlan(file = dbPath()): Plan {
   try {
-    return withMoves(withChanges(plan, savedChanges(file)), savedMoves(file));
+    return savedPlan(file);
   } catch (error) {
     console.error("Couldn't read moved runs", error);
     return plan;
@@ -100,17 +112,15 @@ export type MoveResult = { error: string } | { warnings: string[] };
 
 /** Moves the run now on `from` to `to` if moveError allows it. The days come from the client, so they're checked here. */
 export function tryMove(from: string, to: string, file = dbPath()): MoveResult {
-  // savedMoves, not currentPlan: a read error should fail the move, not check it against the plan as written.
-  const moves = savedMoves(file);
-  const moved = withMoves(plan, moves);
+  // savedPlan, not currentPlan: a read error should fail the move, not check it against the plan as written.
+  const moved = savedPlan(file);
   const error = moveError(moved, from, to);
   if (error) return { error };
   const run = runOn(moved, from);
   // Keyed by the plan's date, so a second move replaces the first and moving back deletes it.
   const planned = run?.planned_date ?? from;
   saveMove(planned, to, file);
-  // A move back onto the planned day is ignored by withMoves, the same as the deleted row.
-  return { warnings: moveWarnings(withMoves(plan, { ...moves, [planned]: to }), to) };
+  return { warnings: savedWarnings(to, file) };
 }
 
 /** Every saved move. A missing file or table means nothing has moved. */
