@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "fresh": "sh scripts/fresh.sh",
+    "try-claude": "sh scripts/try-claude.sh",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

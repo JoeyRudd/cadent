@@ -10,6 +10,7 @@ syncs Garmin. One user, hosted at home.
 
 - `pnpm dev`: run the app.
 - `pnpm fresh`: stop anything on ports 3000–3009, start the app and open it in the browser.
+- `pnpm try-claude`: start the app with the Claude connector on and open Claude Code connected to it.
 - `pnpm check`: lint + typecheck. Run before saying you're done.
 
 ## Layout
